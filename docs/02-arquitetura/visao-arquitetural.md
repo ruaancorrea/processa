@@ -46,7 +46,7 @@ graph TB
     end
 
     subgraph Backend["Processa Backend"]
-        API["API<br/>ASP.NET Core 8<br/>REST + SignalR hubs"]
+        API["API<br/>ASP.NET Core 10 (LTS)<br/>REST + SignalR hubs"]
         Worker["Workers<br/>.NET (consumers RabbitMQ)"]
         Scheduler["Scheduler<br/>Quartz.NET (regras periódicas,<br/>lembretes, SLA)"]
     end

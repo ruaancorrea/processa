@@ -14,7 +14,7 @@
 
 ## Versionamento e releases
 
-SemVer calculado a partir dos commits convencionais (`BREAKING CHANGE`/`!` → major, `feat` → minor, demais → patch). Merge em `develop` gera pre-release (`vX.Y.Z-dev.N`); merge em `main` gera release estável. Detalhes em [ADR-010](docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md).
+SemVer calculado a partir dos commits convencionais (`BREAKING CHANGE`/`!` → major, `feat` → minor, demais → patch), via `semantic-release` (`.github/workflows/release.yml`). Merge em `develop` gera pre-release (`vX.Y.Z-dev.N`); merge em `main` gera release estável + imagens em `ghcr.io/ruaancorrea/`. Depende de branch protection com o check de CI obrigatório — configurado nas settings do repositório, não no código. Detalhes em [ADR-010](docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md).
 
 ## Onde propor mudanças de arquitetura
 

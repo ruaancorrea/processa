@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detectar pastas alteradas
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci.yml'
+
+  backend:
+    name: Backend (.NET)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Processa.slnx
+
+      - name: Verificar formatação (dotnet format)
+        run: dotnet format Processa.slnx --verify-no-changes --severity warn
+
+      - name: Build (Release, sem warnings tratados como sucesso silencioso)
+        run: dotnet build Processa.slnx --configuration Release --no-restore
+
+      - name: Scan de vulnerabilidades em dependências
+        run: |
+          dotnet list Processa.slnx package --vulnerable --include-transitive 2>&1 | tee vuln.log
+          if grep -q "has the following vulnerable packages" vuln.log; then
+            echo "::error::Dependência vulnerável encontrada — ver log acima."
+            exit 1
+          fi
+
+      - name: Testes de arquitetura (NetArchTest)
+        run: dotnet test tests/Processa.ArchitectureTests --configuration Release --no-build
+
+      - name: Testes unitários (com gate de cobertura 80%, ver .csproj)
+        run: dotnet test tests/Processa.UnitTests --configuration Release --no-build
+
+      - name: Testes de integração
+        run: dotnet test tests/Processa.IntegrationTests --configuration Release --no-build
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/tests/Processa.UnitTests/coverage.cobertura.xml
+          retention-days: 14
+
+  frontend:
+    name: Frontend (React)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Scan de vulnerabilidades em dependências
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes (Vitest)
+        run: npm run test -- --run
+
+      - name: Build
+        run: npm run build
+
+  # Check único e estável para branch protection — backend/frontend são condicionais
+  # (path filter), então exigi-los diretamente travaria PR que só mexeu numa pasta
+  # (job "skipped" não satisfaz required check). Este job sempre roda e falha se
+  # qualquer job que de fato rodou falhou.
+  ci-success:
+    name: CI (obrigatório para merge)
+    if: always()
+    needs: [changes, backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar resultado dos jobs
+        run: |
+          if [ "${{ needs.backend.result }}" = "failure" ] || [ "${{ needs.frontend.result }}" = "failure" ]; then
+            echo "::error::Um ou mais jobs de CI falharam."
+            exit 1
+          fi
+          echo "CI passou (ou não havia mudança na pasta correspondente)."

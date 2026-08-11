@@ -4,6 +4,8 @@ obj/
 *.user
 *.suo
 .vs/
+coverage.cobertura.xml
+TestResults/
 
 # Node / frontend
 node_modules/
@@ -29,3 +31,9 @@ desktop.ini
 # Logs
 *.log
 logs/
+
+# Contexto de desenvolvimento local (ferramenta de IA / memória de sessão) —
+# fica só na máquina, nunca no repositório público.
+/CLAUDE.md
+.claude/
+.faf/

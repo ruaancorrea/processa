@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vs/
+**/coverage/
+**/*.user
+.git/
+.github/
+docs/
+.claude/
+.faf/
+*.md
+.env
+.env.local
