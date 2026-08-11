@@ -117,3 +117,21 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Check único e estável para branch protection — backend/frontend são condicionais
+  # (path filter), então exigi-los diretamente travaria PR que só mexeu numa pasta
+  # (job "skipped" não satisfaz required check). Este job sempre roda e falha se
+  # qualquer job que de fato rodou falhou.
+  ci-success:
+    name: CI (obrigatório para merge)
+    if: always()
+    needs: [changes, backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar resultado dos jobs
+        run: |
+          if [ "${{ needs.backend.result }}" = "failure" ] || [ "${{ needs.frontend.result }}" = "failure" ]; then
+            echo "::error::Um ou mais jobs de CI falharam."
+            exit 1
+          fi
+          echo "CI passou (ou não havia mudança na pasta correspondente)."
