@@ -31,3 +31,9 @@ desktop.ini
 # Logs
 *.log
 logs/
+
+# Contexto de desenvolvimento local (ferramenta de IA / memória de sessão) —
+# fica só na máquina, nunca no repositório público.
+/CLAUDE.md
+.claude/
+.faf/
