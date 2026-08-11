@@ -1,0 +1,31 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Env / secrets
+.env
+.env.local
+*.pfx
+*.pem
+
+# Editor
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
