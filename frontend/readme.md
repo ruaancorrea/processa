@@ -39,4 +39,4 @@ npm run build          # tsc -b && vite build — o mesmo que roda no CI
 
 ## Stack
 
-TanStack Query (cache/revalidação de dados do servidor) · Zustand (estado de UI local) · Tailwind CSS v4 · React Router. Base de componentes acessíveis (shadcn/ui) a integrar conforme as telas forem construídas a partir do Sprint 6 — ver [roadmap](../docs/07-roadmap/roadmap-mvp.md).
+TanStack Query (cache/revalidação de dados do servidor) · Tailwind CSS v4. Zustand (estado de UI local) e React Router entram quando a primeira tela que precisa deles for construída (Sprint 6, kanban) — não instalados antes de terem uso real, pra não carregar dependência morta. Base de componentes acessíveis (shadcn/ui) a integrar no mesmo momento — ver [roadmap](../docs/07-roadmap/roadmap-mvp.md).

@@ -29,7 +29,7 @@ cd backend
 dotnet run --project src/Processa.Api
 ```
 
-API disponível em `http://localhost:5xxx` (porta definida pelo launch profile), com `/health/live` para checagem rápida e `/swagger` (ambiente Development) para a documentação OpenAPI.
+API disponível em `http://localhost:5000`, com `/health/live` para checagem rápida e `/swagger` (ambiente Development) para a documentação OpenAPI interativa.
 
 ## Testes
 
