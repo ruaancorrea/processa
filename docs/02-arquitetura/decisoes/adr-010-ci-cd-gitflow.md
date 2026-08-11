@@ -10,8 +10,8 @@ O projeto precisa de um fluxo de trabalho que produza histórico legível, relea
 
 - **GitFlow leve:** `main` (produção, sempre estável) ← `develop` (integração) ← `feature/processa-<área>-<resumo>` / `fix/...`. Toda branch de feature nasce a partir da `develop` atualizada.
 - **Conventional Commits** (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, `ci:`, `build:`) — versão semântica calculada automaticamente a partir do histórico: `BREAKING CHANGE`/`!` → major, `feat` → minor, demais → patch.
-- **CI obrigatório no GitHub Actions** antes de merge: build, lint (dotnet format + ESLint), testes (xUnit backend com cobertura mínima 80%, Vitest frontend), testes de arquitetura (NetArchTest). PR não mergeável com CI vermelho.
-- Merge em `develop` → pre-release automático (`vX.Y.Z-dev.N`); merge em `main` → release estável + build de imagem Docker publicada em registry.
+- **CI obrigatório no GitHub Actions** antes de merge: build, lint (`dotnet format` + oxlint), scan de dependência vulnerável (`dotnet list package --vulnerable` + `npm audit`), testes (xUnit backend com cobertura mínima 80%, Vitest frontend), testes de arquitetura (NetArchTest). PR não mergeável com CI vermelho. Jobs com path filter — só roda backend/frontend quando a pasta correspondente muda (`.github/workflows/ci.yml`).
+- **Release automático via `semantic-release`** (`.github/workflows/release.yml`, `.releaserc.json`): push em `develop` → tag e pre-release GitHub (`vX.Y.Z-dev.N`); push em `main` → release estável (`vX.Y.Z`) + build e push das imagens `ghcr.io/ruaancorrea/processa-api` e `ghcr.io/ruaancorrea/processa-frontend` (tag da versão + `latest`/`dev` mutável). Depende de branch protection exigindo o check de CI antes do merge — configurar em Settings → Branches do repositório.
 - TDD como prática esperada (não só cobertura mínima): funcionalidade nasce com teste — Red → Green → Refactor — documentado como regra de desenvolvimento do projeto.
 
 ## Alternativas consideradas

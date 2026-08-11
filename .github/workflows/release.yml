@@ -1,0 +1,86 @@
+name: Release
+
+# Dispara em push direto em develop/main — assume que o merge só chegou até
+# lá porque passou pela CI como check obrigatório do PR (branch protection).
+# Ver docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md e CONTRIBUTING.md.
+on:
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Instalar tooling de release
+        run: npm ci
+
+      # SemVer calculado dos Conventional Commits desde a última tag:
+      # BREAKING CHANGE/! -> major, feat -> minor, demais -> patch (.releaserc.json).
+      # main = release estável (vX.Y.Z); develop = pre-release (vX.Y.Z-dev.N).
+      - name: Release semântico (semantic-release)
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      - name: Login no GitHub Container Registry
+        if: steps.semantic.outputs.new-release-published == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        if: steps.semantic.outputs.new-release-published == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Definir tag mutável (latest em main, dev em develop)
+        if: steps.semantic.outputs.new-release-published == 'true'
+        id: tags
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "mutable_tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "mutable_tag=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build & push imagem da API
+        if: steps.semantic.outputs.new-release-published == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend.Dockerfile
+          push: true
+          tags: |
+            ghcr.io/ruaancorrea/processa-api:${{ steps.semantic.outputs.new-release-version }}
+            ghcr.io/ruaancorrea/processa-api:${{ steps.tags.outputs.mutable_tag }}
+
+      - name: Build & push imagem do frontend
+        if: steps.semantic.outputs.new-release-published == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/frontend.Dockerfile
+          push: true
+          tags: |
+            ghcr.io/ruaancorrea/processa-frontend:${{ steps.semantic.outputs.new-release-version }}
+            ghcr.io/ruaancorrea/processa-frontend:${{ steps.tags.outputs.mutable_tag }}

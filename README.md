@@ -99,13 +99,21 @@ processa/
 │       └── shared/
 ├── docs/
 ├── backlog/
-├── docker/
-└── .github/workflows/
+├── docker/                                 # Dockerfiles (backend, frontend) + nginx.conf
+├── .github/workflows/                      # ci.yml (build/lint/test) + release.yml (semantic-release)
+└── package.json                            # tooling de release (semantic-release) — não é o produto
 ```
+
+## CI/CD
+
+- **CI** ([`ci.yml`](.github/workflows/ci.yml)): build, `dotnet format`/oxlint, scan de vulnerabilidade (`dotnet list package --vulnerable` + `npm audit`), testes de arquitetura/unitários/integração, com path filters (só roda o job da pasta que mudou).
+- **Release** ([`release.yml`](.github/workflows/release.yml)): [`semantic-release`](https://semantic-release.gitbook.io/) calcula a versão a partir de Conventional Commits — push em `develop` gera pre-release (`vX.Y.Z-dev.N`), push em `main` gera release estável (`vX.Y.Z`) com changelog automático no GitHub Releases e as imagens `ghcr.io/ruaancorrea/processa-api` e `ghcr.io/ruaancorrea/processa-frontend` publicadas.
+
+Detalhes e alternativas consideradas em [ADR-010](docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md).
 
 ## Status
 
-🏗️ **Sprint 0 concluído** — fundação técnica no ar: solução .NET em Clean Architecture com testes de arquitetura reais (NetArchTest) validando as regras do [ADR-001](docs/02-arquitetura/decisoes/adr-001-clean-architecture-modular-monolith.md), `docker compose up` sobe Postgres/Redis/RabbitMQ/MinIO com health checks, CI no GitHub Actions (build, lint, testes, gate de cobertura 80%), frontend React com TanStack Query já falando com a API. Próximo passo no roadmap: [Sprint 1 — Identidade e multi-tenancy](docs/07-roadmap/backlog-sprints.md#sprint-1--identidade-tenants-e-controle-de-acesso).
+🏗️ **Sprint 0 concluído** — fundação técnica no ar: solução .NET em Clean Architecture com testes de arquitetura reais (NetArchTest) validando as regras do [ADR-001](docs/02-arquitetura/decisoes/adr-001-clean-architecture-modular-monolith.md), `docker compose up` sobe Postgres/Redis/RabbitMQ/MinIO com health checks, CI + release automático no GitHub Actions, frontend React com TanStack Query já falando com a API (CORS incluído). Próximo passo no roadmap: [Sprint 1 — Identidade e multi-tenancy](docs/07-roadmap/backlog-sprints.md#sprint-1--identidade-tenants-e-controle-de-acesso).
 
 ## Licença
 
