@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (.NET)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Processa.slnx
+
+      - name: Verificar formatação (dotnet format)
+        run: dotnet format Processa.slnx --verify-no-changes --severity warn
+
+      - name: Build (Release, sem warnings tratados como sucesso silencioso)
+        run: dotnet build Processa.slnx --configuration Release --no-restore
+
+      - name: Scan de vulnerabilidades em dependências
+        run: |
+          dotnet list Processa.slnx package --vulnerable --include-transitive 2>&1 | tee vuln.log
+          if grep -q "has the following vulnerable packages" vuln.log; then
+            echo "::error::Dependência vulnerável encontrada — ver log acima."
+            exit 1
+          fi
+
+      - name: Testes de arquitetura (NetArchTest)
+        run: dotnet test tests/Processa.ArchitectureTests --configuration Release --no-build
+
+      - name: Testes unitários (com gate de cobertura 80%, ver .csproj)
+        run: dotnet test tests/Processa.UnitTests --configuration Release --no-build
+
+      - name: Testes de integração
+        run: dotnet test tests/Processa.IntegrationTests --configuration Release --no-build
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/tests/Processa.UnitTests/coverage.cobertura.xml
+          retention-days: 14
+
+  frontend:
+    name: Frontend (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes (Vitest)
+        run: npm run test -- --run
+
+      - name: Build
+        run: npm run build

@@ -32,17 +32,34 @@ Multi-tenant desde o desenho: cada escritório contábil é um tenant isolado, o
 
 | Camada | Tecnologia |
 |---|---|
-| Backend | C# 12 · ASP.NET Core 8 (Minimal APIs + Controllers) |
+| Backend | C# 13 · ASP.NET Core 10 (LTS) (Minimal APIs + Controllers) |
 | Arquitetura | Clean Architecture · Monólito modular por bounded context (DDD) |
-| Banco de dados | PostgreSQL 16 · EF Core 8 (Npgsql) |
+| Banco de dados | PostgreSQL 16 · EF Core (Npgsql) |
 | Cache / mensageria | Redis 7 · RabbitMQ (MassTransit) |
 | Tempo real | SignalR (kanban colaborativo, notificações internas) |
-| Frontend | React 18 + TypeScript · Vite · TanStack Query · shadcn/ui |
+| Frontend | React 19 + TypeScript · Vite 8 · TanStack Query · Tailwind CSS v4 · shadcn/ui |
 | Observabilidade | OpenTelemetry (traces/métricas) · Serilog (logs estruturados) |
 | Infra | Docker Compose · GitHub Actions (CI/CD) · Object Storage (S3-compatible) |
 | Testes | xUnit + FluentAssertions + Testcontainers (backend) · Vitest + Testing Library (frontend) |
 
 Ver justificativa de cada escolha em [`docs/02-arquitetura/decisoes/`](docs/02-arquitetura/decisoes/).
+
+## Como rodar
+
+```bash
+cp .env.example .env        # preencher as senhas de Postgres/RabbitMQ/MinIO
+docker compose up -d        # sobe postgres + redis + rabbitmq + minio, com health checks
+```
+
+```bash
+# backend — API roda no host, falando com a infra containerizada
+cd backend && dotnet run --project src/Processa.Api
+
+# frontend — em outro terminal
+cd frontend && npm install && npm run dev
+```
+
+Detalhes em [`backend/readme.md`](backend/readme.md) e [`frontend/readme.md`](frontend/readme.md).
 
 ## Documentação
 
@@ -58,11 +75,11 @@ Ver justificativa de cada escolha em [`docs/02-arquitetura/decisoes/`](docs/02-a
 | [`docs/07-roadmap/`](docs/07-roadmap/roadmap-mvp.md) | Roadmap do MVP e backlog por sprint |
 | [`backlog/`](backlog/README.md) | Backlog completo (14 épicos → 13 sprints → 59 itens), rastreado no Jira |
 
-## Estrutura de repositório planejada
+## Estrutura do repositório
 
 ```
 processa/
-├── backend/
+├── backend/                              # .NET 10 — ver backend/readme.md
 │   ├── src/
 │   │   ├── Processa.Api/                 # composition root, controllers, middlewares
 │   │   ├── Processa.Modules.Identidade/  # tenants, usuários, auth, RBAC
@@ -73,10 +90,10 @@ processa/
 │   │   ├── Processa.Modules.Portal/      # API do portal do cliente
 │   │   └── Processa.Shared.Kernel/       # building blocks DDD (Entity, ValueObject, DomainEvent)
 │   └── tests/
-│       ├── Processa.UnitTests/
-│       ├── Processa.IntegrationTests/
+│       ├── Processa.UnitTests/           # gate de cobertura 80% (ver .csproj)
+│       ├── Processa.IntegrationTests/    # WebApplicationFactory, ponta a ponta
 │       └── Processa.ArchitectureTests/   # NetArchTest — valida regras de dependência do ADR-001
-├── frontend/
+├── frontend/                             # React + Vite — ver frontend/readme.md
 │   └── src/
 │       ├── features/                     # 1 pasta por bounded context, espelha o backend
 │       └── shared/
@@ -86,11 +103,9 @@ processa/
 └── .github/workflows/
 ```
 
-> Estrutura de código ainda não implementada — este repositório documenta o desenho completo do sistema (arquitetura, modelo de dados, API, backlog) antes da primeira linha de código, como projeto de portfólio e futura base de produto.
-
 ## Status
 
-📐 **Fase de especificação.** Documentação de arquitetura, domínio e backlog concluída. Implementação segue o roadmap em [`docs/07-roadmap/roadmap-mvp.md`](docs/07-roadmap/roadmap-mvp.md), a partir do Sprint 0.
+🏗️ **Sprint 0 concluído** — fundação técnica no ar: solução .NET em Clean Architecture com testes de arquitetura reais (NetArchTest) validando as regras do [ADR-001](docs/02-arquitetura/decisoes/adr-001-clean-architecture-modular-monolith.md), `docker compose up` sobe Postgres/Redis/RabbitMQ/MinIO com health checks, CI no GitHub Actions (build, lint, testes, gate de cobertura 80%), frontend React com TanStack Query já falando com a API. Próximo passo no roadmap: [Sprint 1 — Identidade e multi-tenancy](docs/07-roadmap/backlog-sprints.md#sprint-1--identidade-tenants-e-controle-de-acesso).
 
 ## Licença
 

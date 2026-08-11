@@ -4,6 +4,8 @@ obj/
 *.user
 *.suo
 .vs/
+coverage.cobertura.xml
+TestResults/
 
 # Node / frontend
 node_modules/

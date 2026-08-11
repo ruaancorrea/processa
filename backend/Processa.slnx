@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Processa.Api/Processa.Api.csproj" />
+    <Project Path="src/Processa.Modules.Clientes/Processa.Modules.Clientes.csproj" />
+    <Project Path="src/Processa.Modules.Documentos/Processa.Modules.Documentos.csproj" />
+    <Project Path="src/Processa.Modules.Identidade/Processa.Modules.Identidade.csproj" />
+    <Project Path="src/Processa.Modules.Notificacoes/Processa.Modules.Notificacoes.csproj" />
+    <Project Path="src/Processa.Modules.Portal/Processa.Modules.Portal.csproj" />
+    <Project Path="src/Processa.Modules.Processos/Processa.Modules.Processos.csproj" />
+    <Project Path="src/Processa.Shared.Kernel/Processa.Shared.Kernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Processa.ArchitectureTests/Processa.ArchitectureTests.csproj" />
+    <Project Path="tests/Processa.IntegrationTests/Processa.IntegrationTests.csproj" />
+    <Project Path="tests/Processa.UnitTests/Processa.UnitTests.csproj" />
+  </Folder>
+</Solution>
