@@ -17,8 +17,7 @@ namespace Processa.IntegrationTests.Identidade;
 /// </summary>
 public sealed class IdentidadeApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine")
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
         .WithDatabase("processa_testes")
         .WithUsername("processa")
         .WithPassword("processa")
