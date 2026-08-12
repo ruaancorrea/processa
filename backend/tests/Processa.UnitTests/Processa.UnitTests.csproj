@@ -12,6 +12,12 @@
     medido pelo total agregado (não pelo mínimo por assembly — módulos ainda sem lógica de
     domínio real não devem travar o gate até ganharem testes próprios nos sprints seguintes).
     Rodar: dotnet test tests/Processa.UnitTests -c Release
+
+    Exclusões: glue code de acesso a dado (DbContext, repositórios EF, migrations, wiring de
+    DI) não tem branch de negócio para unit test cobrir com sinal real — é validado de verdade
+    por Processa.IntegrationTests contra Postgres real (Testcontainers), não por aqui. Ver
+    .faf/decisions.faf. Domain e Application (onde vive a regra de negócio) permanecem 100%
+    dentro do gate — nenhuma exclusão ali.
   -->
   <PropertyGroup>
     <CollectCoverage>true</CollectCoverage>
@@ -19,6 +25,7 @@
     <Threshold>80</Threshold>
     <ThresholdType>line</ThresholdType>
     <ThresholdStat>total</ThresholdStat>
+    <Exclude>[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Migracoes.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Repositorios.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.IdentidadeDbContext,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.IdentidadeModuleServiceCollectionExtensions,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.HttpContextTenantContext,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Configuracoes.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Presentation.*</Exclude>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +36,7 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" Version="6.12.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
@@ -40,6 +48,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Processa.Modules.Processos\Processa.Modules.Processos.csproj" />
     <ProjectReference Include="..\..\src\Processa.Shared.Kernel\Processa.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\src\Processa.Modules.Identidade\Processa.Modules.Identidade.csproj" />
   </ItemGroup>
 
 </Project>

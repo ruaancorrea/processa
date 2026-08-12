@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setAccessToken } from "./authStore";
 import { ApiError, httpClient } from "./httpClient";
 
 function mockFetchOnce(response: Partial<Response> & { json?: () => Promise<unknown> }) {
@@ -15,7 +16,7 @@ function mockFetchOnce(response: Partial<Response> & { json?: () => Promise<unkn
 
 describe("httpClient", () => {
   beforeEach(() => {
-    localStorage.clear();
+    setAccessToken(null);
   });
 
   afterEach(() => {
@@ -52,8 +53,8 @@ describe("httpClient", () => {
     await expect(httpClient("/invalido")).rejects.toBeInstanceOf(ApiError);
   });
 
-  it("inclui o header Authorization quando há token salvo", async () => {
-    localStorage.setItem("processa.accessToken", "token-de-teste");
+  it("inclui o header Authorization quando há token em memória", async () => {
+    setAccessToken("token-de-teste");
     mockFetchOnce({ ok: true, status: 200, json: async () => ({}) });
 
     await httpClient("/protegido");
@@ -63,7 +64,7 @@ describe("httpClient", () => {
     expect(headers.Authorization).toBe("Bearer token-de-teste");
   });
 
-  it("não inclui Authorization quando não há token salvo", async () => {
+  it("não inclui Authorization quando não há token em memória", async () => {
     mockFetchOnce({ ok: true, status: 200, json: async () => ({}) });
 
     await httpClient("/publico");
@@ -71,5 +72,14 @@ describe("httpClient", () => {
     const [, init] = vi.mocked(fetch).mock.calls[0];
     const headers = init?.headers as Record<string, string>;
     expect(headers.Authorization).toBeUndefined();
+  });
+
+  it("sempre envia credentials: include (cookie httpOnly do refresh token)", async () => {
+    mockFetchOnce({ ok: true, status: 200, json: async () => ({}) });
+
+    await httpClient("/qualquer");
+
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(init?.credentials).toBe("include");
   });
 });
