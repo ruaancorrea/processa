@@ -79,12 +79,12 @@ public static class AuthEndpoints
         // Endpoints de exemplo para validar RBAC de ponta a ponta (PROJ-35) — todo
         // endpoint de negócio real (Sprint 2+) segue este mesmo padrão de policy.
         app.MapGet("/api/v1/me", (ClaimsPrincipal user) => Results.Ok(new
-            {
-                UsuarioId = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value,
-                TenantId = user.FindFirst("tenant_id")?.Value,
-                Perfil = user.FindFirst("perfil")?.Value,
-                Nome = user.Identity?.Name,
-            }))
+        {
+            UsuarioId = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value,
+            TenantId = user.FindFirst("tenant_id")?.Value,
+            Perfil = user.FindFirst("perfil")?.Value,
+            Nome = user.Identity?.Name,
+        }))
             .RequireAuthorization("QualquerPerfil")
             .WithName("MeuUsuario")
             .WithTags("Identidade");
