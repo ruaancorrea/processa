@@ -1,0 +1,149 @@
+### Variáveis (REST Client / VS Code / IntelliJ HTTP Client)
+### Preencha manualmente rodando a API local (dotnet run) contra o Postgres local.
+### NUNCA cole um token real aqui antes de commitar — este arquivo é público (portfólio).
+### Fluxo: rode "TENANTS - Cadastrar tenant", depois "AUTH - Login", copie o
+### accessToken da resposta pra @token abaixo. access expira em 15min, refresh em 7 dias
+### (o refresh token não aparece no corpo — ele vai só no cookie httpOnly, o REST Client
+### de VS Code reaproveita cookies automaticamente dentro da mesma sessão de requisições).
+@base_url = http://localhost:5000/api/v1
+@token =
+
+### ===================== TENANTS (PROJ-33) =====================
+
+### TENANTS - Cadastro válido (sucesso, 201 + tenantId/usuarioAdminId)
+POST {{base_url}}/tenants
+Content-Type: application/json
+
+{
+  "nomeEscritorio": "Escritorio QA",
+  "cnpj": "11222333000181",
+  "nomeAdmin": "Admin QA",
+  "emailAdmin": "admin-qa@exemplo.com",
+  "senha": "senhaForte123"
+}
+###
+
+### TENANTS - CNPJ inválido (negativo, 422 RFC 9457 com errors.Cnpj)
+POST {{base_url}}/tenants
+Content-Type: application/json
+
+{
+  "nomeEscritorio": "Escritorio Invalido",
+  "cnpj": "123",
+  "nomeAdmin": "Admin",
+  "emailAdmin": "outro-qa@exemplo.com",
+  "senha": "senhaForte123"
+}
+###
+
+### TENANTS - CNPJ já cadastrado (negativo, 422 "já existe")
+### Rode a requisição de cadastro válido acima duas vezes com o mesmo CNPJ.
+POST {{base_url}}/tenants
+Content-Type: application/json
+
+{
+  "nomeEscritorio": "Escritorio Duplicado",
+  "cnpj": "11222333000181",
+  "nomeAdmin": "Admin Duplicado",
+  "emailAdmin": "duplicado-qa@exemplo.com",
+  "senha": "senhaForte123"
+}
+###
+
+### ===================== AUTH (PROJ-34, PROJ-36) =====================
+
+### AUTH - Login com credenciais válidas (sucesso, 200 + accessToken no corpo + cookie processa_refresh)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-qa@exemplo.com",
+  "senha": "senhaForte123"
+}
+###
+
+### AUTH - Login com senha errada (negativo, 401, mensagem genérica)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-qa@exemplo.com",
+  "senha": "senha-errada"
+}
+###
+
+### AUTH - Login com e-mail inexistente (negativo, 401, MESMA mensagem genérica —
+### não revela se o e-mail existe, ver .faf/decisions.faf)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ninguem@exemplo.com",
+  "senha": "qualquer"
+}
+###
+
+### AUTH - Bloqueio de conta: rode este bloco de senha errada 5x seguidas,
+### depois a requisição de login com senha CERTA logo abaixo (esperado: 401
+### "Conta bloqueada... Tente novamente após HH:mm", mesmo com a senha certa)
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-qa@exemplo.com",
+  "senha": "senha-errada"
+}
+###
+
+### AUTH - Login com senha certa DURANTE o bloqueio (negativo, 401 "Conta bloqueada")
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-qa@exemplo.com",
+  "senha": "senhaForte123"
+}
+###
+
+### AUTH - Refresh com cookie válido (sucesso, 200 + novo accessToken, cookie rotacionado)
+### Depende do cookie processa_refresh setado pela requisição de login válida acima
+### (na mesma sessão do REST Client).
+POST {{base_url}}/auth/refresh
+###
+
+### AUTH - Refresh sem cookie (negativo, 401 "Sessão expirada")
+### Rode numa aba/sessão nova do REST Client, sem ter feito login antes.
+POST {{base_url}}/auth/refresh
+###
+
+### AUTH - Logout (sucesso, 204, idempotente — chamar de novo também dá 204)
+POST {{base_url}}/auth/logout
+###
+
+### ===================== RBAC E PERFIL (PROJ-35) =====================
+
+### ME - Sem token (negativo, 401)
+GET {{base_url}}/me
+###
+
+### ME - Com token válido (sucesso, 200 com usuarioId/tenantId/perfil/nome)
+### Cole o accessToken da resposta de login em @token, no topo do arquivo.
+GET {{base_url}}/me
+Authorization: Bearer {{token}}
+###
+
+### ADMIN - Ping com token de Admin (sucesso, 200) — o usuário criado junto
+### com o tenant nasce como Admin (ver CriarTenantCommandHandler).
+GET {{base_url}}/admin/ping
+Authorization: Bearer {{token}}
+###
+
+### ADMIN - Ping sem token (negativo, 401)
+GET {{base_url}}/admin/ping
+###
+
+### NOTA: não há endpoint público ainda pra criar usuário com perfil Gestor/Analista
+### (nasce no módulo Clientes/Equipes, Sprint 2+) — o caso "não-admin recebe 403 no
+### /admin/ping" só é verificável via teste de integração automatizado hoje
+### (AuthEndpointTests.AdminPing_UsuarioNaoAdmin_Retorna403), que emite o token
+### direto pelo IJwtTokenGenerator real. Atualizar este arquivo quando existir.
