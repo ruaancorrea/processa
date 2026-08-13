@@ -1,0 +1,7 @@
+### Variáveis (REST Client / VS Code / IntelliJ HTTP Client)
+### Sprint 0 (fundação técnica) não tem endpoint de domínio — só o health check.
+@base_url = http://localhost:5000
+
+### Health check — sucesso, 200
+GET {{base_url}}/health/live
+###
