@@ -1,4 +1,5 @@
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 
 namespace Processa.Modules.Identidade.Application.Repositorios;
 
@@ -21,6 +22,11 @@ public interface IUsuarioRepository
     /// vazaria dados entre tenants silenciosamente.
     /// </summary>
     Task<Usuario?> ObterPorIdIgnorandoTenantAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Escopado pelo Global Query Filter de tenant — usar para qualquer
+    /// consulta feita dentro de um contexto autenticado (ex.: validar que o usuário
+    /// a adicionar numa equipe pertence ao mesmo tenant de quem está adicionando).</summary>
+    Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct = default);
 
     Task AddAsync(Usuario usuario, CancellationToken ct = default);
 }

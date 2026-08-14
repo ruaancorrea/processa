@@ -1,8 +1,11 @@
 using System.Text.RegularExpressions;
-using Processa.Shared.Kernel;
 
-namespace Processa.Modules.Identidade.Domain;
+namespace Processa.Shared.Kernel;
 
+/// <summary>
+/// Vive em Shared.Kernel pelo mesmo motivo de <see cref="Cnpj"/> — Usuario
+/// (Identidade) e ContatoCliente (Clientes) precisam da mesma validação de e-mail.
+/// </summary>
 public sealed partial class Email : ValueObject
 {
     public string Valor { get; }

@@ -1,0 +1,266 @@
+### Variáveis (REST Client / VS Code / IntelliJ HTTP Client)
+### Preencha manualmente rodando a API local (dotnet run) contra o Postgres local.
+### NUNCA cole um token real aqui antes de commitar — este arquivo é público (portfólio).
+### Fluxo: cadastre um tenant (ver qa/processa-api-sprint1.http), faça login e cole o
+### accessToken em @token. Todo endpoint abaixo exige Authorization: Bearer {{token}}.
+@base_url = http://localhost:5000/api/v1
+@token =
+
+### ===================== EQUIPES (PROJ-37) =====================
+
+### EQUIPES - Criar equipe (sucesso, 201)
+POST {{base_url}}/equipes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Equipe Fiscal",
+  "descricao": "Apuracao de impostos"
+}
+###
+
+### EQUIPES - Nome vazio (negativo, 422 RFC 9457 com errors.NomeEquipe)
+POST {{base_url}}/equipes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "",
+  "descricao": null
+}
+###
+
+### EQUIPES - Listar equipes do tenant (sucesso, 200)
+GET {{base_url}}/equipes
+Authorization: Bearer {{token}}
+###
+
+### EQUIPES - Obter por id, com membros (sucesso, 200)
+### Substitua {equipeId} pelo id retornado no POST acima.
+GET {{base_url}}/equipes/{equipeId}
+Authorization: Bearer {{token}}
+###
+
+### EQUIPES - Atualizar nome/descrição (sucesso, 204)
+PUT {{base_url}}/equipes/{equipeId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Equipe Tributária",
+  "descricao": "Apuração de impostos e obrigações acessórias"
+}
+###
+
+### EQUIPES - Desativar (sucesso, 204)
+POST {{base_url}}/equipes/{equipeId}/desativar
+Authorization: Bearer {{token}}
+###
+
+### EQUIPES - Reativar (sucesso, 204)
+POST {{base_url}}/equipes/{equipeId}/reativar
+Authorization: Bearer {{token}}
+###
+
+### MEMBROS - Adicionar membro com papel Gestor (sucesso, 201)
+### Substitua {usuarioId} pelo usuarioId retornado no cadastro do tenant (é o admin).
+POST {{base_url}}/equipes/{equipeId}/membros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": "{usuarioId}",
+  "papel": "Gestor"
+}
+###
+
+### MEMBROS - Papel Admin não é permitido em equipe (negativo, 422 com errors.Papel —
+### achado real de revisão: essa regra vivia só no Domain, corrigida pra também estar
+### no FluentValidation, ver sprint/2/sprint-review-apresentacao.md)
+POST {{base_url}}/equipes/{equipeId}/membros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": "{usuarioId}",
+  "papel": "Admin"
+}
+###
+
+### MEMBROS - Remover membro (sucesso, 204)
+DELETE {{base_url}}/equipes/{equipeId}/membros/{usuarioId}
+Authorization: Bearer {{token}}
+###
+
+### ===================== GRUPOS DE CLIENTES (PROJ-38) =====================
+
+### GRUPOS - Criar grupo (sucesso, 201)
+POST {{base_url}}/grupos-clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Grupo Varejo",
+  "descricao": "Clientes do setor varejista"
+}
+###
+
+### GRUPOS - Listar grupos do tenant (sucesso, 200)
+GET {{base_url}}/grupos-clientes
+Authorization: Bearer {{token}}
+###
+
+### ===================== CLIENTES (PROJ-38) =====================
+
+### CLIENTES - Cadastro válido (sucesso, 201)
+POST {{base_url}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "razaoSocial": "Cliente Contabil LTDA",
+  "cnpj": "11222333000181",
+  "codigoExterno": "COD-1",
+  "grupoClienteId": null,
+  "regimeTributario": "SimplesNacional",
+  "dataEntrada": "2026-01-01"
+}
+###
+
+### CLIENTES - CNPJ inválido (negativo, 422 com errors.Cnpj)
+POST {{base_url}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "razaoSocial": "Cliente Inválido",
+  "cnpj": "123",
+  "codigoExterno": null,
+  "grupoClienteId": null,
+  "regimeTributario": "Mei",
+  "dataEntrada": "2026-01-01"
+}
+###
+
+### CLIENTES - CNPJ já cadastrado no mesmo tenant (negativo, 422)
+### Rode o cadastro válido acima duas vezes com o mesmo CNPJ.
+POST {{base_url}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "razaoSocial": "Cliente Duplicado",
+  "cnpj": "11222333000181",
+  "codigoExterno": null,
+  "grupoClienteId": null,
+  "regimeTributario": "Mei",
+  "dataEntrada": "2026-01-01"
+}
+###
+
+### CLIENTES - Listar clientes do tenant (sucesso, 200)
+GET {{base_url}}/clientes
+Authorization: Bearer {{token}}
+###
+
+### CLIENTES - Obter por id, com contatos e responsáveis (sucesso, 200)
+GET {{base_url}}/clientes/{clienteId}
+Authorization: Bearer {{token}}
+###
+
+### CLIENTES - Atualizar dados (sucesso, 204)
+PUT {{base_url}}/clientes/{clienteId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "razaoSocial": "Cliente Contabil LTDA - Matriz",
+  "codigoExterno": "COD-1-NOVO",
+  "grupoClienteId": null,
+  "regimeTributario": "LucroPresumido"
+}
+###
+
+### CLIENTES - Suspender (sucesso, 204)
+POST {{base_url}}/clientes/{clienteId}/suspender
+Authorization: Bearer {{token}}
+###
+
+### CLIENTES - Reativar (sucesso, 204)
+POST {{base_url}}/clientes/{clienteId}/reativar
+Authorization: Bearer {{token}}
+###
+
+### ===================== CONTATOS DO CLIENTE (PROJ-39) =====================
+
+### CONTATOS - Adicionar contato com e-mail (sucesso, 201)
+POST {{base_url}}/clientes/{clienteId}/contatos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Maria Silva",
+  "email": "maria@exemplo.com",
+  "telefone": null,
+  "celular": null
+}
+###
+
+### CONTATOS - Sem nenhum meio de contato (negativo, 422 com errors.Contato — achado
+### real de revisão, mesma classe do achado de Papel acima)
+POST {{base_url}}/clientes/{clienteId}/contatos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Sem Contato",
+  "email": null,
+  "telefone": null,
+  "celular": null
+}
+###
+
+### CONTATOS - Desativar (sucesso, 204)
+POST {{base_url}}/contatos-cliente/{contatoId}/desativar
+Authorization: Bearer {{token}}
+###
+
+### CONTATOS - Reativar (sucesso, 204)
+POST {{base_url}}/contatos-cliente/{contatoId}/reativar
+Authorization: Bearer {{token}}
+###
+
+### ===================== RESPONSÁVEIS POR CLIENTE (PROJ-40) =====================
+
+### RESPONSÁVEIS - Adicionar responsável (usuário precisa ser membro da equipe
+### informada — sucesso, 201)
+POST {{base_url}}/clientes/{clienteId}/responsaveis
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "{equipeId}",
+  "usuarioId": "{usuarioId}"
+}
+###
+
+### RESPONSÁVEIS - Usuário não é membro da equipe (negativo, 422)
+POST {{base_url}}/clientes/{clienteId}/responsaveis
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "{equipeId}",
+  "usuarioId": "{usuarioIdQueNaoEhMembro}"
+}
+###
+
+### RESPONSÁVEIS - Remover vínculo (sucesso, 204)
+DELETE {{base_url}}/responsaveis-cliente/{responsavelId}
+Authorization: Bearer {{token}}
+###
+
+### NOTA: RBAC negativo (Analista bloqueado em rotas GestorOuAdmin/Admin) só é
+### verificável via teste de integração automatizado hoje — não há endpoint público
+### pra criar usuário Analista ainda (nasce no módulo Processos/Demandas, Sprint 3+).
+### Ver ClienteEndpointTests.PostClientes_UsuarioAnalista_Retorna403.

@@ -1,11 +1,14 @@
 using System.Text.RegularExpressions;
-using Processa.Shared.Kernel;
 
-namespace Processa.Modules.Identidade.Domain;
+namespace Processa.Shared.Kernel;
 
 /// <summary>
 /// CNPJ com validação de dígito verificador (módulo 11) — não só formato.
 /// Armazenado só com dígitos (sem máscara); formatação é responsabilidade da apresentação.
+/// Vive em Shared.Kernel (não em um módulo específico) porque é um conceito
+/// genuinamente cross-cutting: Tenant (Identidade) e Cliente (Clientes) precisam
+/// da mesma validação, sem duplicar o algoritmo de dígito verificador entre módulos
+/// — Domain não pode referenciar Domain de outro módulo (ver .claude/architecture.md).
 /// </summary>
 public sealed partial class Cnpj : ValueObject
 {

@@ -1,4 +1,5 @@
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 
 namespace Processa.Modules.Identidade.Application.Repositorios;
 

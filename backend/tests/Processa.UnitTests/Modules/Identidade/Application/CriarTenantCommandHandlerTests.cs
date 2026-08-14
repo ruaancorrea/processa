@@ -4,6 +4,7 @@ using Processa.Modules.Identidade.Application;
 using Processa.Modules.Identidade.Application.Repositorios;
 using Processa.Modules.Identidade.Application.Tenants;
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 using Xunit;
 
 namespace Processa.UnitTests.Modules.Identidade.Application;

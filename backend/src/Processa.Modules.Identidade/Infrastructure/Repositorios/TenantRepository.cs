@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Processa.Modules.Identidade.Application.Repositorios;
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 
 namespace Processa.Modules.Identidade.Infrastructure.Repositorios;
 
