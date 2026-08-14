@@ -14,18 +14,22 @@ public sealed class IdentidadeDbContext(DbContextOptions<IdentidadeDbContext> op
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Equipe> Equipes => Set<Equipe>();
+    public DbSet<MembroEquipe> MembrosEquipe => Set<MembroEquipe>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("identidade");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentidadeDbContext).Assembly);
 
-        // Global Query Filter por tenant (ADR-002) — Usuario e RefreshToken (via Usuario)
-        // só enxergam dados do tenant resolvido no contexto da requisição. Tenant em si
+        // Global Query Filter por tenant (ADR-002) — Usuario/Equipe/MembroEquipe só
+        // enxergam dados do tenant resolvido no contexto da requisição. Tenant em si
         // não é filtrado (é a própria unidade de isolamento). Consultas que legitimamente
         // precisam atravessar tenants (login, checagem de e-mail único) usam
         // IgnoreQueryFilters() explicitamente no repositório, nunca implicitamente aqui.
         modelBuilder.Entity<Usuario>().HasQueryFilter(u => u.TenantId == tenantContext.TenantId);
+        modelBuilder.Entity<Equipe>().HasQueryFilter(e => e.TenantId == tenantContext.TenantId);
+        modelBuilder.Entity<MembroEquipe>().HasQueryFilter(m => m.TenantId == tenantContext.TenantId);
     }
 
     public Task SalvarAsync(CancellationToken ct = default) => SaveChangesAsync(ct);

@@ -23,6 +23,9 @@ public static class IdentidadeModuleServiceCollectionExtensions
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IEquipeRepository, EquipeRepository>();
+        services.AddScoped<IMembroEquipeRepository, MembroEquipeRepository>();
+        services.AddScoped<IVerificadorMembroEquipe, VerificadorMembroEquipe>();
 
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 

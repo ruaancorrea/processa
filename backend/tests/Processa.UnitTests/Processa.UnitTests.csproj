@@ -25,7 +25,7 @@
     <Threshold>80</Threshold>
     <ThresholdType>line</ThresholdType>
     <ThresholdStat>total</ThresholdStat>
-    <Exclude>[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Migracoes.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Repositorios.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.IdentidadeDbContext,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.IdentidadeModuleServiceCollectionExtensions,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.HttpContextTenantContext,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Configuracoes.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Presentation.*</Exclude>
+    <Exclude>[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Migracoes.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Repositorios.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.IdentidadeDbContext,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.IdentidadeModuleServiceCollectionExtensions,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.HttpContextTenantContext,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.Configuracoes.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Presentation.*,[Processa.Modules.Identidade]Processa.Modules.Identidade.Infrastructure.VerificadorMembroEquipe,[Processa.Modules.Clientes]Processa.Modules.Clientes.Infrastructure.Migracoes.*,[Processa.Modules.Clientes]Processa.Modules.Clientes.Infrastructure.Repositorios.*,[Processa.Modules.Clientes]Processa.Modules.Clientes.Infrastructure.ClientesDbContext,[Processa.Modules.Clientes]Processa.Modules.Clientes.Infrastructure.ClientesModuleServiceCollectionExtensions,[Processa.Modules.Clientes]Processa.Modules.Clientes.Infrastructure.Configuracoes.*,[Processa.Modules.Clientes]Processa.Modules.Clientes.Presentation.*</Exclude>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,6 +49,7 @@
     <ProjectReference Include="..\..\src\Processa.Modules.Processos\Processa.Modules.Processos.csproj" />
     <ProjectReference Include="..\..\src\Processa.Shared.Kernel\Processa.Shared.Kernel.csproj" />
     <ProjectReference Include="..\..\src\Processa.Modules.Identidade\Processa.Modules.Identidade.csproj" />
+    <ProjectReference Include="..\..\src\Processa.Modules.Clientes\Processa.Modules.Clientes.csproj" />
   </ItemGroup>
 
 </Project>

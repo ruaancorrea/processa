@@ -69,6 +69,33 @@ public class CleanArchitectureTests
         result.IsSuccessful.Should().BeTrue(FormatarFalhas(result));
     }
 
+    /// <summary>
+    /// Nenhum módulo pode referenciar OUTRO módulo diretamente — nem Domain, nem
+    /// Application, nem Infrastructure, nem Presentation. Comunicação entre módulos
+    /// passa por uma interface em Processa.Shared.Kernel (implementada por quem
+    /// possui a informação, consumida pelo outro lado só pela abstração) — ver
+    /// IVerificadorMembroEquipe e .faf/decisions.faf (Sprint 2). Sem isso, é fácil
+    /// um módulo "vazar" um ProjectReference pro outro por conveniência (ex.: reusar
+    /// uma query via ISender), o que recria acoplamento de compilação que o desenho
+    /// de monólito modular existe pra evitar.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Modulos))]
+    public void Modulo_NaoDependeDeOutroModulo(Assembly moduleAssembly)
+    {
+        var namespaceRaiz = moduleAssembly.GetName().Name!;
+        var outrosNamespaces = ModuleAssemblies
+            .Select(a => a.GetName().Name!)
+            .Where(nome => nome != namespaceRaiz)
+            .ToArray();
+
+        var result = Types.InAssembly(moduleAssembly)
+            .ShouldNot().HaveDependencyOnAny(outrosNamespaces)
+            .GetResult();
+
+        result.IsSuccessful.Should().BeTrue(FormatarFalhas(result));
+    }
+
     private static string NamespaceContaining(Assembly assembly, string suffix)
     {
         // Deriva o namespace raiz do módulo (ex: "Processa.Modules.Processos") a partir

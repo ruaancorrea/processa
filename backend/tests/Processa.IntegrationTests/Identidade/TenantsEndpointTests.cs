@@ -6,8 +6,10 @@ using Xunit;
 
 namespace Processa.IntegrationTests.Identidade;
 
-[Collection("Identidade")]
-public class TenantsEndpointTests(IdentidadeApiFixture fixture) : IAsyncLifetime
+using Processa.IntegrationTests;
+
+[Collection("ProcessaApi")]
+public class TenantsEndpointTests(ProcessaApiFixture fixture) : IAsyncLifetime
 {
     private readonly HttpClient _client = fixture.CreateClient();
 

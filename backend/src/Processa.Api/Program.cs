@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Processa.Api;
+using Processa.Modules.Clientes.Infrastructure;
+using Processa.Modules.Clientes.Presentation;
 using Processa.Modules.Identidade.Infrastructure;
 using Processa.Modules.Identidade.Presentation;
 using Processa.Modules.Processos.Presentation;
@@ -27,10 +29,12 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblyContaining<Processa.Modules.Processos.ProcessosModuleMarker>();
     cfg.RegisterServicesFromAssemblyContaining<Processa.Modules.Identidade.IdentidadeModuleMarker>();
+    cfg.RegisterServicesFromAssemblyContaining<Processa.Modules.Clientes.ClientesModuleMarker>();
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 
 builder.Services.AddIdentidadeModule(builder.Configuration);
+builder.Services.AddClientesModule(builder.Configuration);
 
 // Middleware global de exceção (RFC 9457 Problem Details) — ver GlobalExceptionHandler.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -111,6 +115,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapProcessosModule();
 app.MapIdentidadeModule();
+app.MapEquipesModule();
+app.MapClientesModule();
 
 app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }))
     .WithTags("Health");

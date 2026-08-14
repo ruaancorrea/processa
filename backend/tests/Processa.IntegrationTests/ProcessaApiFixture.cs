@@ -3,19 +3,22 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Processa.Modules.Clientes.Infrastructure;
 using Processa.Modules.Identidade.Infrastructure;
 using Testcontainers.PostgreSql;
 using Xunit;
 
-namespace Processa.IntegrationTests.Identidade;
+namespace Processa.IntegrationTests;
 
 /// <summary>
 /// Postgres real via Testcontainers (não H2/sqlite in-memory — queremos pegar diferenças
-/// reais de dialeto/índice/constraint do Postgres). Compartilhado entre todos os testes
-/// da coleção "Identidade" (ver <see cref="IdentidadeTestCollection"/>) — um container só,
-/// migrations aplicadas uma vez.
+/// reais de dialeto/índice/constraint do Postgres). Compartilhado entre TODOS os testes
+/// de integração (não só Identidade) — um container só, migrations de todos os módulos
+/// aplicadas uma vez. Renomeada de "IdentidadeApiFixture" no Sprint 2: testes de Clientes
+/// (ex.: AdicionarResponsavelCommand) dependem de dado criado por Identidade (Equipe,
+/// Usuario), então precisam do mesmo processo/mesmo banco — não faz sentido duplicar.
 /// </summary>
-public sealed class IdentidadeApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
+public sealed class ProcessaApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
         .WithDatabase("processa_testes")
@@ -59,17 +62,21 @@ public sealed class IdentidadeApiFixture : WebApplicationFactory<Program>, IAsyn
         await _postgres.StartAsync();
 
         using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IdentidadeDbContext>();
-        await db.Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<IdentidadeDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ClientesDbContext>().Database.MigrateAsync();
     }
 
     /// <summary>Limpa as tabelas entre testes sem recriar o container (rápido).</summary>
     public async Task LimparDadosAsync()
     {
         using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IdentidadeDbContext>();
-        await db.Database.ExecuteSqlRawAsync(
-            "TRUNCATE TABLE identidade.refresh_tokens, identidade.usuarios, identidade.tenants CASCADE;");
+        var identidadeDb = scope.ServiceProvider.GetRequiredService<IdentidadeDbContext>();
+        await identidadeDb.Database.ExecuteSqlRawAsync(
+            "TRUNCATE TABLE identidade.refresh_tokens, identidade.membros_equipe, identidade.equipes, identidade.usuarios, identidade.tenants CASCADE;");
+
+        var clientesDb = scope.ServiceProvider.GetRequiredService<ClientesDbContext>();
+        await clientesDb.Database.ExecuteSqlRawAsync(
+            "TRUNCATE TABLE clientes.responsaveis_cliente, clientes.contatos_cliente, clientes.clientes, clientes.grupos_cliente CASCADE;");
     }
 
     async Task IAsyncLifetime.DisposeAsync()
@@ -79,5 +86,5 @@ public sealed class IdentidadeApiFixture : WebApplicationFactory<Program>, IAsyn
     }
 }
 
-[CollectionDefinition("Identidade")]
-public sealed class IdentidadeTestCollection : ICollectionFixture<IdentidadeApiFixture>;
+[CollectionDefinition("ProcessaApi")]
+public sealed class ProcessaApiTestCollection : ICollectionFixture<ProcessaApiFixture>;

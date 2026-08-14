@@ -10,8 +10,10 @@ using Xunit;
 
 namespace Processa.IntegrationTests.Identidade;
 
-[Collection("Identidade")]
-public class AuthEndpointTests(IdentidadeApiFixture fixture) : IAsyncLifetime
+using Processa.IntegrationTests;
+
+[Collection("ProcessaApi")]
+public class AuthEndpointTests(ProcessaApiFixture fixture) : IAsyncLifetime
 {
     private const string Senha = "senhaForte123";
 

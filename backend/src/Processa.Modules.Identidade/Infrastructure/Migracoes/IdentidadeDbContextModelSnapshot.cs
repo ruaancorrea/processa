@@ -23,6 +23,73 @@ namespace Processa.Modules.Identidade.Infrastructure.Migracoes
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Processa.Modules.Identidade.Domain.Equipe", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Ativa")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("equipes", "identidade");
+                });
+
+            modelBuilder.Entity("Processa.Modules.Identidade.Domain.MembroEquipe", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EquipeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Papel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("EquipeId", "UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("membros_equipe", "identidade");
+                });
+
             modelBuilder.Entity("Processa.Modules.Identidade.Domain.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -143,7 +210,7 @@ namespace Processa.Modules.Identidade.Infrastructure.Migracoes
 
             modelBuilder.Entity("Processa.Modules.Identidade.Domain.Tenant", b =>
                 {
-                    b.OwnsOne("Processa.Modules.Identidade.Domain.Cnpj", "Cnpj", b1 =>
+                    b.OwnsOne("Processa.Shared.Kernel.Cnpj", "Cnpj", b1 =>
                         {
                             b1.Property<Guid>("TenantId")
                                 .HasColumnType("uuid");
@@ -171,7 +238,7 @@ namespace Processa.Modules.Identidade.Infrastructure.Migracoes
 
             modelBuilder.Entity("Processa.Modules.Identidade.Domain.Usuario", b =>
                 {
-                    b.OwnsOne("Processa.Modules.Identidade.Domain.Email", "Email", b1 =>
+                    b.OwnsOne("Processa.Shared.Kernel.Email", "Email", b1 =>
                         {
                             b1.Property<Guid>("UsuarioId")
                                 .HasColumnType("uuid");
