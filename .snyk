@@ -1,0 +1,36 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.1
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  b4f8b838-e213-4166-9ba8-370db3b5a582:
+    - '*':
+        reason: >-
+          Falso-positivo: chave de teste de integracao fake (Testcontainers),
+          string contem literalmente 'nunca-usar-em-producao'. Nunca usada fora
+          do fixture de teste.
+        expires: 2026-09-13T23:36:56.046Z
+        created: 2026-08-14T23:36:56.048Z
+  da401253-ba40-491f-9b7c-7cdebe317c68:
+    - '*':
+        reason: >-
+          Falso-positivo: mesmo fixture de teste de integracao acima
+          (Jwt:Audience fake).
+        expires: 2026-09-13T23:36:58.899Z
+        created: 2026-08-14T23:36:58.904Z
+  3aa230ef-8faf-4d19-9680-ace7be2dfe0d:
+    - '*':
+        reason: >-
+          Falso-positivo: mesmo fixture de teste de integracao acima
+          (Jwt:SecretKey fake, string contem literalmente
+          'nunca-usar-em-producao').
+        expires: 2026-09-13T23:37:02.169Z
+        created: 2026-08-14T23:37:02.173Z
+  31b8d3d4-802b-4fc5-bc0c-05e7848d06ca:
+    - '*':
+        reason: >-
+          Falso-positivo: chave de teste unitario fake, string contem
+          literalmente 'nao-usar-em-lugar-nenhum-real'. Nunca usada fora do
+          teste.
+        expires: 2026-09-13T23:37:05.128Z
+        created: 2026-08-14T23:37:05.132Z
+patch: {}
