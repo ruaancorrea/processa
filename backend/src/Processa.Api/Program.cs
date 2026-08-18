@@ -117,6 +117,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapProcessosModule();
 app.MapConfiguracaoProcessosModule();
+app.MapEtapasProcessosModule();
 app.MapIdentidadeModule();
 app.MapEquipesModule();
 app.MapClientesModule();

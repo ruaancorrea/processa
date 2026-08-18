@@ -10,6 +10,7 @@ public sealed class ProcessosDbContext(DbContextOptions<ProcessosDbContext> opti
     public DbSet<TipoProcesso> TiposProcesso => Set<TipoProcesso>();
     public DbSet<CampoPersonalizado> CamposPersonalizados => Set<CampoPersonalizado>();
     public DbSet<Fluxo> Fluxos => Set<Fluxo>();
+    public DbSet<Etapa> Etapas => Set<Etapa>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,6 +20,7 @@ public sealed class ProcessosDbContext(DbContextOptions<ProcessosDbContext> opti
         modelBuilder.Entity<TipoProcesso>().HasQueryFilter(t => t.TenantId == tenantContext.TenantId);
         modelBuilder.Entity<CampoPersonalizado>().HasQueryFilter(c => c.TenantId == tenantContext.TenantId);
         modelBuilder.Entity<Fluxo>().HasQueryFilter(f => f.TenantId == tenantContext.TenantId);
+        modelBuilder.Entity<Etapa>().HasQueryFilter(e => e.TenantId == tenantContext.TenantId);
     }
 
     public Task SalvarAsync(CancellationToken ct = default) => SaveChangesAsync(ct);

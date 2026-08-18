@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Processa.Modules.Processos.Infrastructure;
@@ -11,9 +12,11 @@ using Processa.Modules.Processos.Infrastructure;
 namespace Processa.Modules.Processos.Infrastructure.Migrations
 {
     [DbContext(typeof(ProcessosDbContext))]
-    partial class ProcessosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260818004759_AdicionarEtapas")]
+    partial class AdicionarEtapas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
