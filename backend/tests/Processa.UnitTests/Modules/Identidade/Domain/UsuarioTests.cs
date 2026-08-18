@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 using Xunit;
 
 namespace Processa.UnitTests.Modules.Identidade.Domain;

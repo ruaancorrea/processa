@@ -26,6 +26,8 @@ public static class IdentidadeModuleServiceCollectionExtensions
         services.AddScoped<IEquipeRepository, EquipeRepository>();
         services.AddScoped<IMembroEquipeRepository, MembroEquipeRepository>();
         services.AddScoped<IVerificadorMembroEquipe, VerificadorMembroEquipe>();
+        services.AddScoped<IVerificadorEquipe, VerificadorEquipe>();
+        services.AddScoped<IVerificadorUsuario, VerificadorUsuario>();
 
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 

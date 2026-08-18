@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Processa.Modules.Clientes.Infrastructure;
 using Processa.Modules.Identidade.Infrastructure;
+using Processa.Modules.Processos.Infrastructure;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -64,6 +65,7 @@ public sealed class ProcessaApiFixture : WebApplicationFactory<Program>, IAsyncL
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IdentidadeDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<ClientesDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ProcessosDbContext>().Database.MigrateAsync();
     }
 
     /// <summary>Limpa as tabelas entre testes sem recriar o container (rápido).</summary>
@@ -77,6 +79,10 @@ public sealed class ProcessaApiFixture : WebApplicationFactory<Program>, IAsyncL
         var clientesDb = scope.ServiceProvider.GetRequiredService<ClientesDbContext>();
         await clientesDb.Database.ExecuteSqlRawAsync(
             "TRUNCATE TABLE clientes.responsaveis_cliente, clientes.contatos_cliente, clientes.clientes, clientes.grupos_cliente CASCADE;");
+
+        var processosDb = scope.ServiceProvider.GetRequiredService<ProcessosDbContext>();
+        await processosDb.Database.ExecuteSqlRawAsync(
+            "TRUNCATE TABLE processos.campos_personalizados, processos.fluxos, processos.tipos_processo CASCADE;");
     }
 
     async Task IAsyncLifetime.DisposeAsync()

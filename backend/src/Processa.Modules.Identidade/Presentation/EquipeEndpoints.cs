@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Processa.Modules.Identidade.Application.Equipes;
-using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 
 namespace Processa.Modules.Identidade.Presentation;
 
