@@ -9,6 +9,7 @@ using Processa.Modules.Clientes.Infrastructure;
 using Processa.Modules.Clientes.Presentation;
 using Processa.Modules.Identidade.Infrastructure;
 using Processa.Modules.Identidade.Presentation;
+using Processa.Modules.Processos.Infrastructure;
 using Processa.Modules.Processos.Presentation;
 using Processa.Shared.Kernel;
 
@@ -35,6 +36,7 @@ builder.Services.AddMediatR(cfg =>
 
 builder.Services.AddIdentidadeModule(builder.Configuration);
 builder.Services.AddClientesModule(builder.Configuration);
+builder.Services.AddProcessosModule(builder.Configuration);
 
 // Middleware global de exceção (RFC 9457 Problem Details) — ver GlobalExceptionHandler.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -114,6 +116,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapProcessosModule();
+app.MapConfiguracaoProcessosModule();
 app.MapIdentidadeModule();
 app.MapEquipesModule();
 app.MapClientesModule();

@@ -1,0 +1,269 @@
+### Variáveis (REST Client / VS Code / IntelliJ HTTP Client)
+### Preencha manualmente rodando a API local (dotnet run) contra o Postgres local.
+### NUNCA cole um token real aqui antes de commitar — este arquivo é público (portfólio).
+### Fluxo: cadastre um tenant (ver qa/processa-api-sprint1.http), faça login, crie uma
+### equipe e adicione-se como membro Gestor (ver qa/processa-api-sprint2.http), cole o
+### accessToken em @token e os ids abaixo. Todo endpoint exige Authorization: Bearer {{token}}.
+@base_url = http://localhost:5000/api/v1
+@token =
+
+### ===================== TIPOS DE PROCESSO (PROJ-41) =====================
+
+### TIPOS DE PROCESSO - Criar com modo Dinâmico (sucesso, 201)
+POST {{base_url}}/tipos-processo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "{equipeId}",
+  "nome": "Abertura de empresa",
+  "descricao": "Processo de abertura",
+  "responsavelObrigatorio": true,
+  "modoAtribuicao": "Dinamico",
+  "responsavelFixoId": null
+}
+###
+
+### TIPOS DE PROCESSO - Modo Fixo exige responsável membro da equipe (sucesso, 201)
+POST {{base_url}}/tipos-processo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "{equipeId}",
+  "nome": "Encerramento de empresa",
+  "descricao": null,
+  "responsavelObrigatorio": true,
+  "modoAtribuicao": "Fixo",
+  "responsavelFixoId": "{usuarioId}"
+}
+###
+
+### TIPOS DE PROCESSO - Modo Fixo sem responsável informado (negativo, 422 com
+### errors.ResponsavelFixoId — regra espelhada no Domain e no FluentValidation)
+POST {{base_url}}/tipos-processo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "{equipeId}",
+  "nome": "Sem responsável",
+  "descricao": null,
+  "responsavelObrigatorio": true,
+  "modoAtribuicao": "Fixo",
+  "responsavelFixoId": null
+}
+###
+
+### TIPOS DE PROCESSO - Modo Fixo com responsável que NÃO é membro da equipe
+### (negativo, 422 — mesmo padrão de IVerificadorMembroEquipe usado em Clientes)
+POST {{base_url}}/tipos-processo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "{equipeId}",
+  "nome": "Responsável inválido",
+  "descricao": null,
+  "responsavelObrigatorio": true,
+  "modoAtribuicao": "Fixo",
+  "responsavelFixoId": "{usuarioIdQueNaoEhMembro}"
+}
+###
+
+### TIPOS DE PROCESSO - Equipe inexistente (negativo, 422)
+POST {{base_url}}/tipos-processo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipeId": "00000000-0000-0000-0000-000000000000",
+  "nome": "Equipe inexistente",
+  "descricao": null,
+  "responsavelObrigatorio": false,
+  "modoAtribuicao": "Manual",
+  "responsavelFixoId": null
+}
+###
+
+### TIPOS DE PROCESSO - Listar tipos do tenant (sucesso, 200)
+GET {{base_url}}/tipos-processo
+Authorization: Bearer {{token}}
+###
+
+### TIPOS DE PROCESSO - Obter por id, com campos, fluxos e permissões (sucesso, 200)
+GET {{base_url}}/tipos-processo/{tipoProcessoId}
+Authorization: Bearer {{token}}
+###
+
+### TIPOS DE PROCESSO - Atualizar dados (sucesso, 204)
+PUT {{base_url}}/tipos-processo/{tipoProcessoId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Abertura de empresa - revisado",
+  "descricao": "Processo de abertura, com revisão de escopo",
+  "responsavelObrigatorio": true,
+  "modoAtribuicao": "Dinamico",
+  "responsavelFixoId": null
+}
+###
+
+### TIPOS DE PROCESSO - Desativar (sucesso, 204)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/desativar
+Authorization: Bearer {{token}}
+###
+
+### TIPOS DE PROCESSO - Ativar (sucesso, 204)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/ativar
+Authorization: Bearer {{token}}
+###
+
+### ===================== PERMISSÕES DE INÍCIO (PROJ-44) =====================
+
+### PERMISSÕES - Definir por perfil e usuário (sucesso, 204)
+PUT {{base_url}}/tipos-processo/{tipoProcessoId}/permissoes-inicio
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "perfis": ["Gestor"],
+  "usuarioIds": ["{usuarioId}"]
+}
+###
+
+### PERMISSÕES - Usuário inexistente (negativo, 422)
+PUT {{base_url}}/tipos-processo/{tipoProcessoId}/permissoes-inicio
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "perfis": [],
+  "usuarioIds": ["00000000-0000-0000-0000-000000000000"]
+}
+###
+
+### ===================== CAMPOS PERSONALIZADOS (PROJ-42) =====================
+
+### CAMPOS - Criar campo tipo Lista com opções (sucesso, 201)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/campos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Prioridade",
+  "tipo": "Lista",
+  "opcoes": ["Baixa", "Média", "Alta"],
+  "obrigatorio": true,
+  "ordem": 0
+}
+###
+
+### CAMPOS - Tipo Lista sem opções (negativo, 422 com errors — regra espelhada
+### Domain + FluentValidation, mesma disciplina RFC 9457 do Sprint 1/2)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/campos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Prioridade sem opções",
+  "tipo": "Lista",
+  "opcoes": [],
+  "obrigatorio": false,
+  "ordem": 0
+}
+###
+
+### CAMPOS - Tipo não-Lista com opções informadas (negativo, 422)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/campos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Observações",
+  "tipo": "Texto",
+  "opcoes": ["não devia ter opção"],
+  "obrigatorio": false,
+  "ordem": 1
+}
+###
+
+### CAMPOS - Atualizar campo (sucesso, 204)
+PUT {{base_url}}/campos-personalizados/{campoId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Prioridade do processo",
+  "opcoes": ["Baixa", "Alta"],
+  "obrigatorio": false,
+  "ordem": 1
+}
+###
+
+### CAMPOS - Remover campo (sucesso, 204)
+DELETE {{base_url}}/campos-personalizados/{campoId}
+Authorization: Bearer {{token}}
+###
+
+### ===================== FLUXOS (PROJ-43) =====================
+
+### FLUXOS - Primeiro fluxo do tipo de processo vira padrão automaticamente,
+### mesmo sem solicitar (sucesso, 201 — ver Fluxo.cs e CriarFluxoCommand)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/fluxos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Fluxo padrão",
+  "descricao": null,
+  "fluxoPadrao": false
+}
+###
+
+### FLUXOS - Segundo fluxo solicitando padrão explicitamente desmarca o anterior
+### na mesma operação (sucesso, 201)
+POST {{base_url}}/tipos-processo/{tipoProcessoId}/fluxos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Fluxo alternativo",
+  "descricao": null,
+  "fluxoPadrao": true
+}
+###
+
+### FLUXOS - Atualizar dados (sucesso, 204)
+PUT {{base_url}}/fluxos/{fluxoId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Fluxo alternativo revisado",
+  "descricao": "Usado para casos excepcionais"
+}
+###
+
+### FLUXOS - Promover outro fluxo a padrão, desmarcando o atual (sucesso, 204)
+POST {{base_url}}/fluxos/{fluxoId}/definir-padrao
+Authorization: Bearer {{token}}
+###
+
+### FLUXOS - Remover o fluxo padrão havendo outros fluxos do mesmo tipo de processo
+### (negativo, 422 — índice único parcial (tipo_processo_id) WHERE fluxo_padrao = true
+### é o backstop real, ver FluxoConfiguration; a Application layer bloqueia antes)
+DELETE {{base_url}}/fluxos/{fluxoIdQueEhPadrao}
+Authorization: Bearer {{token}}
+###
+
+### FLUXOS - Remover fluxo não-padrão (sucesso, 204)
+DELETE {{base_url}}/fluxos/{fluxoIdQueNaoEhPadrao}
+Authorization: Bearer {{token}}
+###
+
+### NOTA: RBAC negativo (Analista bloqueado em rotas GestorOuAdmin, 403; sem token, 401)
+### verificado via teste de integração automatizado — ver
+### TipoProcessoEndpointTests.PostTiposProcesso_UsuarioAnalista_Retorna403 e
+### TipoProcessoEndpointTests.PostTiposProcesso_SemToken_Retorna401.

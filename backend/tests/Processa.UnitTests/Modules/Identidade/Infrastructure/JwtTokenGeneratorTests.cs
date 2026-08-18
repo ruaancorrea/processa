@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 using Processa.Modules.Identidade.Infrastructure;
 using Xunit;
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Processa.Modules.Identidade.Application;
 using Processa.Modules.Identidade.Domain;
+using Processa.Shared.Kernel;
 using Xunit;
 
 namespace Processa.IntegrationTests.Identidade;
