@@ -1,0 +1,265 @@
+### Variáveis (REST Client / VS Code / IntelliJ HTTP Client)
+### Preencha manualmente rodando a API local (dotnet run) contra o Postgres local.
+### NUNCA cole um token real aqui antes de commitar — este arquivo é público (portfólio).
+### Fluxo: cadastre um tenant (sprint1), faça login, crie equipe/tipo de processo/fluxo
+### (sprint3), cole o accessToken em @token e os ids abaixo. Todo endpoint exige
+### Authorization: Bearer {{token}}.
+@base_url = http://localhost:5000/api/v1
+@token =
+
+### ===================== ETAPAS — TIPO COMUM/CONCLUSÃO (PROJ-45) =====================
+
+### ETAPAS - Criar etapa Comum, sem configuração (sucesso, 201)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Revisão manual",
+  "descricao": null,
+  "tipo": "Comum",
+  "ordem": 0,
+  "configuracao": null
+}
+###
+
+### ETAPAS - Criar etapa Conclusão (sucesso, 201)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Fim do processo",
+  "descricao": null,
+  "tipo": "Conclusao",
+  "ordem": 99,
+  "configuracao": null
+}
+###
+
+### ETAPAS - Comum/Conclusão com configuração informada (negativo, 422)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Não devia aceitar configuração",
+  "descricao": null,
+  "tipo": "Comum",
+  "ordem": 0,
+  "configuracao": { "tipo": "Agendamento", "diasOffset": 3 }
+}
+###
+
+### ===================== ETAPA CONDICIONAL (PROJ-46) =====================
+
+### ETAPAS - Criar etapa Condicional com ramos e etapa padrão (sucesso, 201)
+### Substitua {campoPersonalizadoId}, {etapaDestinoId} e {etapaPadraoId} por ids reais.
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Desvio por prioridade",
+  "descricao": null,
+  "tipo": "Condicional",
+  "ordem": 1,
+  "configuracao": {
+    "tipo": "Condicional",
+    "ramos": [
+      { "campoPersonalizadoId": "{campoPersonalizadoId}", "operador": "Igual", "valor": "Alta", "etapaDestinoId": "{etapaDestinoId}" }
+    ],
+    "etapaPadraoId": "{etapaPadraoId}"
+  }
+}
+###
+
+### ETAPAS - Condicional sem ramos (negativo, 422 com errors.Configuracao)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Sem ramos",
+  "descricao": null,
+  "tipo": "Condicional",
+  "ordem": 1,
+  "configuracao": { "tipo": "Condicional", "ramos": [], "etapaPadraoId": "{etapaPadraoId}" }
+}
+###
+
+### ===================== ETAPA AUTOMATIZADA (PROJ-47) =====================
+### Única etapa cujo comportamento (chamada HTTP real) já roda de verdade no Sprint 4.
+
+### ETAPAS - Criar etapa Automatizada com URL/método/status esperado (sucesso, 201)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Notificar sistema externo",
+  "descricao": null,
+  "tipo": "Automatizada",
+  "ordem": 2,
+  "configuracao": { "tipo": "Automatizada", "url": "https://httpbin.org/post", "metodo": "Post", "corpoTemplate": "{}", "statusHttpEsperado": 200 }
+}
+###
+
+### ETAPAS - URL inválida (negativo, 422 com errors.Configuracao — espelha
+### ConfiguracaoEtapaAutomatizada.Validar() via CriarEtapaCommandValidator)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "URL inválida",
+  "descricao": null,
+  "tipo": "Automatizada",
+  "ordem": 2,
+  "configuracao": { "tipo": "Automatizada", "url": "não-é-uma-url", "metodo": "Get", "corpoTemplate": null, "statusHttpEsperado": 200 }
+}
+###
+
+### ===================== ETAPA DE NOTIFICAÇÃO / AGENDAMENTO (PROJ-48) =====================
+### Envio real de notificação é do módulo Notificações (Sprint 8) — aqui só a configuração.
+
+### ETAPAS - Criar etapa de Notificação (sucesso, 201)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Avisar equipe",
+  "descricao": null,
+  "tipo": "Notificacao",
+  "ordem": 3,
+  "configuracao": { "tipo": "Notificacao", "destinatario": "Equipe", "canal": "Interno", "mensagem": "Prazo vencendo" }
+}
+###
+
+### ETAPAS - Criar etapa de Agendamento (sucesso, 201)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Aguardar 3 dias",
+  "descricao": null,
+  "tipo": "Agendamento",
+  "ordem": 4,
+  "configuracao": { "tipo": "Agendamento", "diasOffset": 3 }
+}
+###
+
+### ===================== ETAPA DE SUBPROCESSO (PROJ-49) =====================
+
+### ETAPAS - Criar etapa de Subprocesso (sucesso, 201)
+### Substitua {tipoProcessoFilhoId} por um TipoProcesso já existente no tenant.
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Abrir processo filho",
+  "descricao": null,
+  "tipo": "Subprocesso",
+  "ordem": 5,
+  "configuracao": { "tipo": "Subprocesso", "tipoProcessoFilhoId": "{tipoProcessoFilhoId}", "herdarResponsavel": true }
+}
+###
+
+### ===================== ETAPA DE UNIÃO — FORK/JOIN (PROJ-50) =====================
+
+### ETAPAS - Criar etapa de União aguardando 2+ etapas (sucesso, 201)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Aguardar todos os ramos",
+  "descricao": null,
+  "tipo": "Uniao",
+  "ordem": 6,
+  "configuracao": { "tipo": "Uniao", "etapasAguardadasIds": ["{etapaRamo1Id}", "{etapaRamo2Id}"] }
+}
+###
+
+### ETAPAS - União com menos de 2 etapas aguardadas (negativo, 422)
+POST {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "União incompleta",
+  "descricao": null,
+  "tipo": "Uniao",
+  "ordem": 6,
+  "configuracao": { "tipo": "Uniao", "etapasAguardadasIds": ["{etapaRamo1Id}"] }
+}
+###
+
+### ===================== CRUD GERAL DE ETAPAS =====================
+
+### ETAPAS - Listar etapas do fluxo, ordenadas (sucesso, 200)
+GET {{base_url}}/fluxos/{fluxoId}/etapas
+Authorization: Bearer {{token}}
+###
+
+### ETAPAS - Obter por id, com configuração completa (sucesso, 200)
+GET {{base_url}}/etapas/{etapaId}
+Authorization: Bearer {{token}}
+###
+
+### ETAPAS - Atualizar dados (sucesso, 204)
+PUT {{base_url}}/etapas/{etapaId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Revisão manual (revisado)",
+  "descricao": "Descrição atualizada",
+  "ordem": 0,
+  "configuracao": null
+}
+###
+
+### ETAPAS - Remover etapa (sucesso, 204)
+DELETE {{base_url}}/etapas/{etapaId}
+Authorization: Bearer {{token}}
+###
+
+### ===================== CONFIGURAÇÃO DE ACESSO POR ETAPA (PROJ-51) =====================
+
+### CONFIGURAÇÃO DE ACESSO - Definir quem pode alterar/concluir além do
+### responsável natural (sucesso, 204)
+PUT {{base_url}}/etapas/{etapaId}/configuracao-acesso
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "podeAlterar": ["Gestor"],
+  "usuarioIdsPodeAlterar": ["{usuarioId}"]
+}
+###
+
+### CONFIGURAÇÃO DE ACESSO - Usuário inexistente (negativo, 422)
+PUT {{base_url}}/etapas/{etapaId}/configuracao-acesso
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "podeAlterar": [],
+  "usuarioIdsPodeAlterar": ["00000000-0000-0000-0000-000000000000"]
+}
+###
+
+### NOTA: RBAC negativo (Analista bloqueado em rotas GestorOuAdmin, 403; sem token, 401)
+### verificado via teste de integração automatizado — ver
+### EtapaEndpointTests.PostEtapas_UsuarioAnalista_Retorna403 e
+### EtapaEndpointTests.PostEtapas_SemToken_Retorna401.
+###
+### NOTA: os handlers dos 8 tipos de etapa (IEtapaHandler) são lógica de domínio
+### testada isoladamente (ver testes unitários) — não há endpoint HTTP que "execute"
+### uma etapa de verdade ainda; isso nasce no Sprint 5 (Execução de Demandas), quando
+### Demanda/ExecucaoEtapa existirem. A exceção é a chamada HTTP real da Etapa
+### Automatizada, cujo transporte (ClienteHttpEtapa) já é real desde este sprint.

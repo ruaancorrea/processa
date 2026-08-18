@@ -14,7 +14,8 @@ public interface IEtapaHandler
         CancellationToken cancellationToken = default);
 }
 
-public sealed record ExecucaoEtapaContexto(Guid TenantId, Guid DemandaId, Guid ExecucaoEtapaId, string ConfiguracaoJson);
+public sealed record ExecucaoEtapaContexto(
+    Guid TenantId, Guid DemandaId, Guid ExecucaoEtapaId, string ConfiguracaoJson, DateTimeOffset? IniciadoEm = null);
 
 public enum DesfechoExecucao
 {
