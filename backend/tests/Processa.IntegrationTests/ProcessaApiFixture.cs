@@ -82,7 +82,9 @@ public sealed class ProcessaApiFixture : WebApplicationFactory<Program>, IAsyncL
 
         var processosDb = scope.ServiceProvider.GetRequiredService<ProcessosDbContext>();
         await processosDb.Database.ExecuteSqlRawAsync(
-            "TRUNCATE TABLE processos.etapas, processos.campos_personalizados, processos.fluxos, processos.tipos_processo CASCADE;");
+            "TRUNCATE TABLE processos.anexos_execucao, processos.comentarios_execucao, processos.historico_execucao_etapa, " +
+            "processos.desdobramentos_aguardados, processos.execucao_etapas, processos.demandas, processos.etapas, " +
+            "processos.campos_personalizados, processos.fluxos, processos.tipos_processo CASCADE;");
     }
 
     async Task IAsyncLifetime.DisposeAsync()

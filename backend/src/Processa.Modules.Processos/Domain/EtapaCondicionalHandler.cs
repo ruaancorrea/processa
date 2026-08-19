@@ -12,7 +12,12 @@ public interface IResolvedorValorCampo
     Task<string?> ObterValorAsync(Guid tenantId, Guid demandaId, Guid campoPersonalizadoId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Avalia os ramos em ordem; o primeiro que casar decide o desvio de fluxo (PROJ-46).</summary>
+/// <summary>
+/// Avalia TODOS os ramos (não para no primeiro) — se mais de um casar, é um fork real:
+/// o orquestrador cria uma ExecucaoEtapa por destino e avança cada ramo em paralelo
+/// dentro da mesma Demanda (PROJ-46, redesenhado no Sprint 5 pra suportar a Etapa de
+/// União de verdade, ver EtapaUniaoHandler). Nenhum ramo casando → segue pra etapa padrão.
+/// </summary>
 public sealed class EtapaCondicionalHandler(IResolvedorValorCampo resolvedorValorCampo) : IEtapaHandler
 {
     public TipoEtapa Tipo => TipoEtapa.Condicional;
@@ -22,14 +27,17 @@ public sealed class EtapaCondicionalHandler(IResolvedorValorCampo resolvedorValo
         var configuracao = JsonSerializer.Deserialize<ConfiguracaoEtapaCondicional>(contexto.ConfiguracaoJson)
             ?? throw new InvalidOperationException("Configuração da etapa condicional ausente ou inválida.");
 
+        var destinos = new List<Guid>();
         foreach (var ramo in configuracao.Ramos)
         {
             var valorReal = await resolvedorValorCampo.ObterValorAsync(contexto.TenantId, contexto.DemandaId, ramo.CampoPersonalizadoId, cancellationToken);
             if (Avalia(ramo.Operador, valorReal, ramo.Valor))
-                return new ResultadoExecucaoEtapa(DesfechoExecucao.Concluida, ramo.EtapaDestinoId);
+                destinos.Add(ramo.EtapaDestinoId);
         }
 
-        return new ResultadoExecucaoEtapa(DesfechoExecucao.Concluida, configuracao.EtapaPadraoId, "Nenhum ramo casou; seguiu para a etapa padrão.");
+        return destinos.Count > 0
+            ? new ResultadoExecucaoEtapa(DesfechoExecucao.Concluida, destinos)
+            : new ResultadoExecucaoEtapa(DesfechoExecucao.Concluida, [configuracao.EtapaPadraoId], "Nenhum ramo casou; seguiu para a etapa padrão.");
     }
 
     public static bool Avalia(OperadorCondicional operador, string? valorReal, string valorEsperado) => operador switch

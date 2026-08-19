@@ -1,0 +1,193 @@
+### Variáveis (REST Client / VS Code / IntelliJ HTTP Client)
+### Preencha manualmente rodando a API local (dotnet run) contra o Postgres local
+### e o MinIO local (docker compose up -d minio — ver docker-compose.yml).
+### NUNCA cole um token real aqui antes de commitar — este arquivo é público (portfólio).
+### Fluxo: cadastre um tenant (sprint1), faça login, crie equipe/tipo de processo/
+### fluxo com etapas (sprint3/4), cole o accessToken em @token e os ids abaixo.
+### Todo endpoint exige Authorization: Bearer {{token}}.
+@base_url = http://localhost:5000/api/v1
+@token =
+
+### ===================== ABERTURA DE DEMANDA (PROJ-52/PROJ-53) =====================
+### Formulário e API usam o MESMO endpoint — a diferença é só a origem da chamada
+### HTTP, não a regra de negócio (ver .faf/decisions.faf, 2026-08-18).
+
+### DEMANDAS - Criar demanda (sucesso, 201) — dispara o orquestrador de verdade,
+### abrindo a ExecucaoEtapa da primeira etapa do fluxo automaticamente
+POST {{base_url}}/demandas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tipoProcessoId": "{tipoProcessoId}",
+  "clienteId": "{clienteId}",
+  "responsavelId": null,
+  "prioridade": "Media",
+  "dataFimPrevista": null,
+  "camposPersonalizados": null
+}
+###
+
+### DEMANDAS - Cliente inexistente ou inativo (negativo, 422)
+POST {{base_url}}/demandas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tipoProcessoId": "{tipoProcessoId}",
+  "clienteId": "00000000-0000-0000-0000-000000000000",
+  "responsavelId": null,
+  "prioridade": "Media",
+  "dataFimPrevista": null,
+  "camposPersonalizados": null
+}
+###
+
+### DEMANDAS - TipoProcesso com PermissoesInicio restrita e usuário fora da lista
+### (negativo, 422 — checagem que ficou pendente desde o Sprint 3, resolvida aqui)
+POST {{base_url}}/demandas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tipoProcessoId": "{tipoProcessoIdComPermissaoRestrita}",
+  "clienteId": "{clienteId}",
+  "responsavelId": null,
+  "prioridade": "Media",
+  "dataFimPrevista": null,
+  "camposPersonalizados": null
+}
+###
+
+### DEMANDAS - Listar demandas do tenant (sucesso, 200)
+GET {{base_url}}/demandas
+Authorization: Bearer {{token}}
+###
+
+### DEMANDAS - Obter por id, com execuções atuais (sucesso, 200)
+### Repare no campo "execucoes" — sob fork, mais de uma entrada fica "EmAndamento"
+### ao mesmo tempo (paralelismo real, não simulado).
+GET {{base_url}}/demandas/{demandaId}
+Authorization: Bearer {{token}}
+###
+
+### ===================== ATRIBUIÇÃO DE RESPONSÁVEL (PROJ-54) =====================
+### 3 modos: Fixo (automático, TipoProcesso.ResponsavelFixoId), Dinâmico (automático,
+### membro da equipe com menos demandas ativas) e Manual (exige escolha ou nasce
+### SemResponsavel, se ResponsavelObrigatorio=false).
+
+### DEMANDAS - Atribuir responsável tardio (demanda nascida SemResponsavel) —
+### sucesso, 204, Status vira Pendente
+POST {{base_url}}/demandas/{demandaId}/responsavel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "responsavelId": "{usuarioId}"
+}
+###
+
+### DEMANDAS - Atualizar prioridade (sucesso, 204)
+PATCH {{base_url}}/demandas/{demandaId}/prioridade
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "prioridade": "Urgente"
+}
+###
+
+### DEMANDAS - Cancelar demanda (sucesso, 204)
+POST {{base_url}}/demandas/{demandaId}/cancelar
+Authorization: Bearer {{token}}
+###
+
+### DEMANDAS - Cancelar demanda já concluída/cancelada (negativo, 422)
+POST {{base_url}}/demandas/{demandaId}/cancelar
+Authorization: Bearer {{token}}
+###
+
+### ===================== PROGRESSÃO DE ETAPAS (PROJ-55) =====================
+
+### EXECUÇÕES - Concluir execução de etapa Comum manualmente (sucesso, 204) —
+### avança o orquestrador: linear, redireciona por Condicional, ou faz fork real
+### se 2+ ramos casarem ao mesmo tempo
+POST {{base_url}}/execucoes-etapa/{execucaoEtapaId}/concluir
+Authorization: Bearer {{token}}
+###
+
+### EXECUÇÕES - Concluir execução já concluída/pulada (negativo, 422)
+POST {{base_url}}/execucoes-etapa/{execucaoEtapaId}/concluir
+Authorization: Bearer {{token}}
+###
+
+### EXECUÇÕES - Histórico de eventos da execução (sucesso, 200)
+GET {{base_url}}/execucoes-etapa/{execucaoEtapaId}/historico
+Authorization: Bearer {{token}}
+###
+
+### ===================== COMENTÁRIOS E ANEXOS (PROJ-56) =====================
+
+### COMENTÁRIOS - Adicionar comentário (sucesso, 201)
+POST {{base_url}}/execucoes-etapa/{execucaoEtapaId}/comentarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "texto": "Aguardando documentação do cliente."
+}
+###
+
+### COMENTÁRIOS - Texto vazio (negativo, 422)
+POST {{base_url}}/execucoes-etapa/{execucaoEtapaId}/comentarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "texto": ""
+}
+###
+
+### COMENTÁRIOS - Listar comentários da execução (sucesso, 200)
+GET {{base_url}}/execucoes-etapa/{execucaoEtapaId}/comentarios
+Authorization: Bearer {{token}}
+###
+
+### ANEXOS - Enviar anexo (sucesso, 201) — storage REAL via MinIO (AWSSDK.S3),
+### não um stub. Requer um cliente HTTP que suporte multipart/form-data (o REST
+### Client do VS Code suporta via < caminho-do-arquivo).
+POST {{base_url}}/execucoes-etapa/{execucaoEtapaId}/anexos
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=processaBoundary
+
+--processaBoundary
+Content-Disposition: form-data; name="arquivo"; filename="documento.txt"
+Content-Type: text/plain
+
+< ./documento-teste.txt
+--processaBoundary--
+###
+
+### ANEXOS - Listar anexos da execução (sucesso, 200)
+GET {{base_url}}/execucoes-etapa/{execucaoEtapaId}/anexos
+Authorization: Bearer {{token}}
+###
+
+### ANEXOS - Baixar conteúdo do anexo (sucesso, 200) — round-trip completo pelo
+### MinIO real: o conteúdo baixado deve ser byte-a-byte idêntico ao enviado
+GET {{base_url}}/anexos/{anexoId}/conteudo
+Authorization: Bearer {{token}}
+###
+
+### NOTA: RBAC negativo (Analista bloqueado em rotas GestorOuAdmin — atribuir
+### responsável, atualizar prioridade, cancelar — 403; sem token, 401) verificado
+### via teste de integração automatizado — ver
+### DemandaEndpointTests.CancelarDemanda_UsuarioAnalista_Retorna403 e
+### DemandaEndpointTests.PostDemandas_SemToken_Retorna401.
+###
+### NOTA: o bug real do AWSSDK.S3 v4 + MinIO (ListBucketsAsync().Buckets null na
+### primeira chamada contra uma instância MinIO sem bucket nenhum) só apareceu
+### rodando este arquivo contra o MinIO local de verdade — nenhum teste automatizado
+### (unitário ou de integração, que sobem o bucket via Testcontainers) reproduziu,
+### porque nenhum deles espelha uma conta MinIO genuinamente vazia. Ver
+### .faf/decisions.faf (2026-08-19) e ArmazenamentoArquivoS3.cs.

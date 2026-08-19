@@ -24,4 +24,19 @@ public enum DesfechoExecucao
     Travada,
 }
 
-public sealed record ResultadoExecucaoEtapa(DesfechoExecucao Desfecho, Guid? ProximaEtapaId = null, string? Motivo = null);
+/// <summary>
+/// ProximasEtapasIds tem mais de um elemento só quando uma Condicional dispara fork
+/// real (mais de um ramo casou ao mesmo tempo) — o orquestrador cria uma ExecucaoEtapa
+/// por id e avança cada ramo em paralelo, dentro da MESMA Demanda (ver
+/// docs/03-modelagem/modelo-de-dados.md#desdobramentos_aguardados e Application/
+/// Demandas/OrquestradorExecucao.cs). Lista vazia = "sem indicação de próxima etapa
+/// específica" (o handler não decide, o orquestrador segue a ordem linear).
+/// DadosResultantes é o único jeito de um handler devolver dado pro orquestrador
+/// persistir em ExecucaoEtapa.DadosExecucao (ex.: EtapaSubprocessoHandler grava o id
+/// da Demanda filha, pra o orquestrador saber qual ramo retomar quando ela concluir).
+/// </summary>
+public sealed record ResultadoExecucaoEtapa(
+    DesfechoExecucao Desfecho,
+    IReadOnlyList<Guid>? ProximasEtapasIds = null,
+    string? Motivo = null,
+    IReadOnlyDictionary<string, string>? DadosResultantes = null);
