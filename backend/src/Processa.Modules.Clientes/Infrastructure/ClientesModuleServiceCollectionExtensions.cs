@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Processa.Modules.Clientes.Application;
 using Processa.Modules.Clientes.Application.Repositorios;
 using Processa.Modules.Clientes.Infrastructure.Repositorios;
+using Processa.Shared.Kernel;
 
 namespace Processa.Modules.Clientes.Infrastructure;
 
@@ -20,6 +21,7 @@ public static class ClientesModuleServiceCollectionExtensions
         services.AddScoped<IGrupoClienteRepository, GrupoClienteRepository>();
         services.AddScoped<IContatoClienteRepository, ContatoClienteRepository>();
         services.AddScoped<IResponsavelClienteRepository, ResponsavelClienteRepository>();
+        services.AddScoped<IVerificadorCliente, VerificadorCliente>();
 
         services.AddValidatorsFromAssembly(typeof(ClientesModuleMarker).Assembly);
 

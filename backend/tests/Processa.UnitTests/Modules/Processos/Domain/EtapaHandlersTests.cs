@@ -28,7 +28,7 @@ public class EtapaCondicionalHandlerTests
         new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), JsonSerializer.Serialize(configuracao));
 
     [Fact]
-    public async Task ExecutarAsync_PrimeiroRamoCasa_VaiParaEtapaDoRamo()
+    public async Task ExecutarAsync_UmRamoCasa_VaiParaEtapaDoRamo()
     {
         var campoId = Guid.NewGuid();
         var etapaDestino = Guid.NewGuid();
@@ -40,7 +40,7 @@ public class EtapaCondicionalHandlerTests
 
         var resultado = await handler.ExecutarAsync(CriarContexto(configuracao));
 
-        resultado.ProximaEtapaId.Should().Be(etapaDestino);
+        resultado.ProximasEtapasIds.Should().BeEquivalentTo([etapaDestino]);
     }
 
     [Fact]
@@ -55,7 +55,27 @@ public class EtapaCondicionalHandlerTests
 
         var resultado = await handler.ExecutarAsync(CriarContexto(configuracao));
 
-        resultado.ProximaEtapaId.Should().Be(etapaPadrao);
+        resultado.ProximasEtapasIds.Should().BeEquivalentTo([etapaPadrao]);
+    }
+
+    [Fact]
+    public async Task ExecutarAsync_MaisDeUmRamoCasa_ForkParaTodosOsDestinos()
+    {
+        var campoId = Guid.NewGuid();
+        var etapaDestino1 = Guid.NewGuid();
+        var etapaDestino2 = Guid.NewGuid();
+        var configuracao = new ConfiguracaoEtapaCondicional(
+            [
+                new RamoCondicional(campoId, OperadorCondicional.MaiorQue, "0", etapaDestino1),
+                new RamoCondicional(campoId, OperadorCondicional.MenorQue, "100", etapaDestino2),
+            ],
+            Guid.NewGuid());
+        _resolvedorValorCampo.ObterValorAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), campoId).Returns("50");
+        var handler = new EtapaCondicionalHandler(_resolvedorValorCampo);
+
+        var resultado = await handler.ExecutarAsync(CriarContexto(configuracao));
+
+        resultado.ProximasEtapasIds.Should().BeEquivalentTo([etapaDestino1, etapaDestino2]);
     }
 
     [Theory]
@@ -182,6 +202,8 @@ public class EtapaSubprocessoHandlerTests
 
         resultado.Desfecho.Should().Be(DesfechoExecucao.Aguardando);
         resultado.Motivo.Should().Contain(demandaFilhaId.ToString());
+        resultado.DadosResultantes.Should().ContainKey(EtapaSubprocessoHandler.DemandaFilhaChave)
+            .WhoseValue.Should().Be(demandaFilhaId.ToString());
     }
 }
 

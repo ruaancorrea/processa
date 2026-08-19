@@ -15,6 +15,12 @@ using Processa.Shared.Kernel;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Limite explícito (não o default implícito do Kestrel, ~30MB) alinhado à única regra de
+// negócio que hoje aceita corpo grande — anexo de execução, ver AdicionarAnexoCommandValidator
+// (25 MB). Sem isso o corpo inteiro de um upload maior é sempre recebido por completo antes
+// da validação de tamanho da aplicação ter a chance de rejeitar.
+builder.WebHost.ConfigureKestrel(opts => opts.Limits.MaxRequestBodySize = 25 * 1024 * 1024 + 1024);
+
 // Add services to the container.
 // Enums sempre serializados como string (não índice numérico) — API pública
 // autoexplicativa, sem exigir consulta à documentação para decodificar um valor.
@@ -118,6 +124,7 @@ app.MapControllers();
 app.MapProcessosModule();
 app.MapConfiguracaoProcessosModule();
 app.MapEtapasProcessosModule();
+app.MapDemandasProcessosModule();
 app.MapIdentidadeModule();
 app.MapEquipesModule();
 app.MapClientesModule();

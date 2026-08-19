@@ -26,6 +26,11 @@ public sealed class EtapaSubprocessoHandler(ICriadorSubprocesso criadorSubproces
         var demandaFilhaId = await criadorSubprocesso.CriarAsync(
             contexto.TenantId, contexto.DemandaId, configuracao.TipoProcessoFilhoId, configuracao.HerdarResponsavel, cancellationToken);
 
-        return new ResultadoExecucaoEtapa(DesfechoExecucao.Aguardando, Motivo: $"Aguardando conclusão do subprocesso {demandaFilhaId}.");
+        return new ResultadoExecucaoEtapa(
+            DesfechoExecucao.Aguardando,
+            Motivo: $"Aguardando conclusão do subprocesso {demandaFilhaId}.",
+            DadosResultantes: new Dictionary<string, string> { [DemandaFilhaChave] = demandaFilhaId.ToString() });
     }
+
+    public const string DemandaFilhaChave = "__subprocesso_filho_id";
 }

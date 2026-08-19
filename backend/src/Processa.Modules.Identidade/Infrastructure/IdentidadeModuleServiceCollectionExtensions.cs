@@ -15,6 +15,7 @@ public static class IdentidadeModuleServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContext, HttpContextTenantContext>();
+        services.AddScoped<IUsuarioContext, HttpContextUsuarioContext>();
 
         services.AddDbContext<IdentidadeDbContext>(opts =>
             opts.UseNpgsql(configuration.GetConnectionString("Postgres")));
@@ -28,6 +29,7 @@ public static class IdentidadeModuleServiceCollectionExtensions
         services.AddScoped<IVerificadorMembroEquipe, VerificadorMembroEquipe>();
         services.AddScoped<IVerificadorEquipe, VerificadorEquipe>();
         services.AddScoped<IVerificadorUsuario, VerificadorUsuario>();
+        services.AddScoped<IListadorMembrosEquipe, ListadorMembrosEquipe>();
 
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 

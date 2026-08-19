@@ -23,6 +23,54 @@ namespace Processa.Modules.Processos.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Processa.Modules.Processos.Domain.AnexoExecucao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CaminhoStorage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExecucaoEtapaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("NomeArmazenado")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("NomeOriginal")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long>("TamanhoBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecucaoEtapaId");
+
+                    b.ToTable("anexos_execucao", "processos");
+                });
+
             modelBuilder.Entity("Processa.Modules.Processos.Domain.CampoPersonalizado", b =>
                 {
                     b.Property<Guid>("Id")
@@ -67,6 +115,132 @@ namespace Processa.Modules.Processos.Infrastructure.Migrations
                     b.HasIndex("TenantId", "TipoProcessoId");
 
                     b.ToTable("campos_personalizados", "processos");
+                });
+
+            modelBuilder.Entity("Processa.Modules.Processos.Domain.ComentarioExecucao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExecucaoEtapaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecucaoEtapaId");
+
+                    b.ToTable("comentarios_execucao", "processos");
+                });
+
+            modelBuilder.Entity("Processa.Modules.Processos.Domain.Demanda", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClienteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DataFimPrevista")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DataFimReal")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("DataInicio")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DemandaPaiId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EtapaAtualId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FluxoAtivoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PercentualConclusao")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Prioridade")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("ResponsavelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TipoProcessoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "ClienteId");
+
+                    b.HasIndex("TenantId", "ResponsavelId");
+
+                    b.HasIndex("TenantId", "Status");
+
+                    b.HasIndex("TenantId", "TipoProcessoId");
+
+                    b.ToTable("demandas", "processos");
+                });
+
+            modelBuilder.Entity("Processa.Modules.Processos.Domain.DesdobramentoAguardado", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Concluido")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ExecucaoEtapaCondicionalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ExecucaoEtapaUniaoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecucaoEtapaCondicionalId")
+                        .IsUnique();
+
+                    b.HasIndex("ExecucaoEtapaUniaoId");
+
+                    b.ToTable("desdobramentos_aguardados", "processos");
                 });
 
             modelBuilder.Entity("Processa.Modules.Processos.Domain.Etapa", b =>
@@ -120,6 +294,53 @@ namespace Processa.Modules.Processos.Infrastructure.Migrations
                     b.ToTable("etapas", "processos");
                 });
 
+            modelBuilder.Entity("Processa.Modules.Processos.Domain.ExecucaoEtapa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ConcluidoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DadosExecucao")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("dados_execucao");
+
+                    b.Property<Guid>("DemandaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EtapaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("IniciadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResponsavelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "DemandaId");
+
+                    b.HasIndex("TenantId", "DemandaId", "EtapaId")
+                        .IsUnique();
+
+                    b.ToTable("execucao_etapas", "processos");
+                });
+
             modelBuilder.Entity("Processa.Modules.Processos.Domain.Fluxo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -161,6 +382,40 @@ namespace Processa.Modules.Processos.Infrastructure.Migrations
                     b.HasIndex("TenantId", "TipoProcessoId");
 
                     b.ToTable("fluxos", "processos");
+                });
+
+            modelBuilder.Entity("Processa.Modules.Processos.Domain.HistoricoExecucaoEtapa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Dados")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("ExecucaoEtapaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TipoEvento")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecucaoEtapaId");
+
+                    b.ToTable("historico_execucao_etapa", "processos");
                 });
 
             modelBuilder.Entity("Processa.Modules.Processos.Domain.TipoProcesso", b =>
