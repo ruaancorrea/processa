@@ -12,6 +12,8 @@ namespace Processa.UnitTests.Modules.Processos.Application;
 public class DemandaCommandsTests
 {
     private readonly IDemandaRepository _demandaRepository = Substitute.For<IDemandaRepository>();
+    private readonly ITipoProcessoRepository _tipoProcessoRepository = Substitute.For<ITipoProcessoRepository>();
+    private readonly IKanbanNotificador _kanbanNotificador = Substitute.For<IKanbanNotificador>();
     private readonly IVerificadorUsuario _verificadorUsuario = Substitute.For<IVerificadorUsuario>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 
@@ -89,7 +91,7 @@ public class DemandaCommandsTests
     // -------- AtribuirResponsavelDemandaCommand --------
 
     private AtribuirResponsavelDemandaCommandHandler CriarAtribuirResponsavelHandler() =>
-        new(_demandaRepository, _verificadorUsuario, _unitOfWork);
+        new(_demandaRepository, _tipoProcessoRepository, _verificadorUsuario, _kanbanNotificador, _unitOfWork);
 
     [Fact]
     public async Task AtribuirResponsavel_DemandaInexistente_RetornaFalha()

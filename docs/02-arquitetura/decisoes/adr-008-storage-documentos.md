@@ -22,4 +22,4 @@ Documentos armazenados em **object storage S3-compatible** (MinIO em desenvolvim
 ## Consequências
 
 - Object storage é uma dependência de infraestrutura obrigatória desde o Sprint 0 (MinIO no `docker-compose.yml` local, para paridade dev/produção).
-- Pre-signed URLs exigem que o frontend trate o fluxo de download em duas etapas (pedir URL assinada → baixar do storage), não um único endpoint que serve o binário.
+- Pre-signed URLs exigem que o cliente consumidor da API trate o fluxo de download em duas etapas (pedir URL assinada → baixar do storage), não um único endpoint que serve o binário.

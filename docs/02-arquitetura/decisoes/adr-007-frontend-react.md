@@ -1,6 +1,13 @@
 # ADR-007 — React + TypeScript + Vite no Frontend, sem SSR no MVP
 
-**Status:** Aceito · **Data:** 2026-08-10
+**Status:** ~~Aceito~~ **Superseded** · **Data:** 2026-08-10 · **Revertido em:** 2026-08-22
+
+> **Nota de reversão:** Processa foi reposicionado como projeto **API-only** — o frontend
+> descrito aqui foi implementado (Sprint 6 chegou a entregar autenticação, kanban e painel
+> operacional) e depois removido do repositório para manter o escopo focado em arquitetura
+> e engenharia de backend. Decisão mantida como registro histórico; não reflete o estado
+> atual do código. A API continua expondo os mesmos dados (kanban por etapa, filtros,
+> paginação) para que qualquer cliente HTTP os consuma.
 
 ## Contexto
 

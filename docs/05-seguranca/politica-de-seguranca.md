@@ -26,7 +26,7 @@
 
 - Toda entrada validada via **FluentValidation** antes de chegar à camada de domínio.
 - Proteção contra SQL injection: EF Core com queries parametrizadas, nunca SQL concatenado.
-- Proteção contra XSS: sanitização de conteúdo renderizado no frontend (especialmente o corpo HTML de notificações, que é gerado por um editor rich text controlado pelo próprio usuário do escritório — sanitizado tanto na gravação quanto na renderização).
+- Proteção contra XSS: sanitização do corpo HTML de notificações (gerado por um editor rich text controlado pelo próprio usuário do escritório) na gravação, já que a API não controla como cada cliente consumidor vai renderizar esse conteúdo.
 - Limite de tamanho em uploads (por tipo de arquivo e por plano de tenant) e em campos de texto livre.
 - Validação de formato para CNPJ, e-mail, UUID nos DTOs de entrada.
 

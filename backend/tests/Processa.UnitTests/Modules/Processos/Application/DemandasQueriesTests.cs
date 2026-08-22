@@ -5,6 +5,7 @@ using Processa.Modules.Processos.Application;
 using Processa.Modules.Processos.Application.Demandas;
 using Processa.Modules.Processos.Application.Repositorios;
 using Processa.Modules.Processos.Domain;
+using Processa.Shared.Kernel;
 using Xunit;
 
 namespace Processa.UnitTests.Modules.Processos.Application;
@@ -12,26 +13,69 @@ namespace Processa.UnitTests.Modules.Processos.Application;
 public class DemandasQueriesTests
 {
     private readonly IDemandaRepository _demandaRepository = Substitute.For<IDemandaRepository>();
+    private readonly ITipoProcessoRepository _tipoProcessoRepository = Substitute.For<ITipoProcessoRepository>();
+    private readonly IEtapaRepository _etapaRepository = Substitute.For<IEtapaRepository>();
+    private readonly IConsultaCliente _consultaCliente = Substitute.For<IConsultaCliente>();
+    private readonly IConsultaUsuario _consultaUsuario = Substitute.For<IConsultaUsuario>();
+    private readonly IUsuarioContext _usuarioContext = Substitute.For<IUsuarioContext>();
     private readonly IExecucaoEtapaRepository _execucaoEtapaRepository = Substitute.For<IExecucaoEtapaRepository>();
     private readonly IHistoricoExecucaoEtapaRepository _historicoRepository = Substitute.For<IHistoricoExecucaoEtapaRepository>();
     private readonly IComentarioExecucaoRepository _comentarioRepository = Substitute.For<IComentarioExecucaoRepository>();
     private readonly IAnexoExecucaoRepository _anexoRepository = Substitute.For<IAnexoExecucaoRepository>();
     private readonly IArmazenamentoArquivo _armazenamentoArquivo = Substitute.For<IArmazenamentoArquivo>();
 
+    public DemandasQueriesTests()
+    {
+        // NSubstitute devolve null (não lista vazia) pra Task<List<T>> não configurado —
+        // default seguro aqui pra não repetir esse detalhe em cada teste que só se importa
+        // com outra parte do enriquecimento de nomes.
+        _tipoProcessoRepository.ListarPorIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([]);
+        _etapaRepository.ListarPorIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([]);
+        _consultaCliente.ObterRazoesSociaisAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new Dictionary<Guid, string>());
+        _consultaUsuario.ObterNomesAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new Dictionary<Guid, string>());
+    }
+
     private static Demanda CriarDemanda() =>
         Demanda.Criar(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Prioridade.Media, null).Value;
 
     // -------- ListarDemandasQuery --------
 
+    private ListarDemandasQueryHandler CriarListarDemandasHandler() => new(
+        _demandaRepository, _tipoProcessoRepository, _etapaRepository, _consultaCliente, _consultaUsuario, _usuarioContext);
+
     [Fact]
-    public async Task ListarDemandas_ProjetaResumoDeCadaDemanda()
+    public async Task ListarDemandas_ProjetaResumoComNomesResolvidos()
     {
         var demanda = CriarDemanda();
-        _demandaRepository.ListarAsync().Returns([demanda]);
+        _demandaRepository.ListarComFiltroAsync(Arg.Any<FiltroDemandas>(), Arg.Any<IReadOnlyList<OrdenacaoDemanda>>(), Arg.Any<int>(), Arg.Any<int>())
+            .Returns(new ResultadoPaginado<Demanda>([demanda], 1, 1, 50));
+        var tipoProcesso = TipoProcesso.Criar(demanda.TenantId, Guid.NewGuid(), "Tipo", null, false, ModoAtribuicao.Manual, null).Value;
+        _tipoProcessoRepository.ListarPorIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([tipoProcesso]);
+        _consultaCliente.ObterRazoesSociaisAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new Dictionary<Guid, string> { [demanda.ClienteId] = "Cliente X" });
+        _consultaUsuario.ObterNomesAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns(demanda.ResponsavelId is { } rid ? new Dictionary<Guid, string> { [rid] = "Fulano" } : new Dictionary<Guid, string>());
 
-        var resultado = await new ListarDemandasQueryHandler(_demandaRepository).Handle(new ListarDemandasQuery(), CancellationToken.None);
+        var resultado = await CriarListarDemandasHandler().Handle(new ListarDemandasQuery(), CancellationToken.None);
 
-        resultado.Should().ContainSingle(d => d.Id == demanda.Id && d.Status == demanda.Status);
+        resultado.Itens.Should().ContainSingle(d => d.Id == demanda.Id && d.Status == demanda.Status && d.ClienteNome == "Cliente X");
+        resultado.TotalRegistros.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ListarDemandas_UsuarioAnalista_ForcaFiltroParaAPropriaFilaMesmoQuePedirOutraCoisa()
+    {
+        _usuarioContext.Perfil.Returns(Perfil.Analista);
+        var meuId = Guid.NewGuid();
+        _usuarioContext.UsuarioId.Returns(meuId);
+        _demandaRepository.ListarComFiltroAsync(Arg.Any<FiltroDemandas>(), Arg.Any<IReadOnlyList<OrdenacaoDemanda>>(), Arg.Any<int>(), Arg.Any<int>())
+            .Returns(new ResultadoPaginado<Demanda>([], 0, 1, 50));
+
+        var pedidoDeOutraFila = new FiltroDemandas(ResponsavelId: Guid.NewGuid(), SemResponsavel: true);
+        await CriarListarDemandasHandler().Handle(new ListarDemandasQuery(pedidoDeOutraFila), CancellationToken.None);
+
+        await _demandaRepository.Received(1).ListarComFiltroAsync(
+            Arg.Is<FiltroDemandas>(f => f.ResponsavelId == meuId && f.SemResponsavel == false),
+            Arg.Any<IReadOnlyList<OrdenacaoDemanda>>(), Arg.Any<int>(), Arg.Any<int>());
     }
 
     // -------- ObterDemandaPorIdQuery --------

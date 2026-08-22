@@ -22,6 +22,7 @@ public static class ClientesModuleServiceCollectionExtensions
         services.AddScoped<IContatoClienteRepository, ContatoClienteRepository>();
         services.AddScoped<IResponsavelClienteRepository, ResponsavelClienteRepository>();
         services.AddScoped<IVerificadorCliente, VerificadorCliente>();
+        services.AddScoped<IConsultaCliente, ConsultaCliente>();
 
         services.AddValidatorsFromAssembly(typeof(ClientesModuleMarker).Assembly);
 

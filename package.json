@@ -2,7 +2,7 @@
   "name": "processa-release-tooling",
   "private": true,
   "version": "0.0.0",
-  "description": "Tooling de versionamento/release do monorepo (não é o pacote do produto — backend/ e frontend/ são independentes). Ver docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md.",
+  "description": "Tooling de versionamento/release (não é o pacote do produto — o produto é a API em backend/). Ver docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md.",
   "devDependencies": {
     "semantic-release": "^25.0.9",
     "semantic-release-export-data": "^1.1.0"

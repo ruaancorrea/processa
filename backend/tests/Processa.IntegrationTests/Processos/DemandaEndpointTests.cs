@@ -310,4 +310,159 @@ public class DemandaEndpointTests(ProcessaApiFixture fixture) : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    // ===================== PROJ-57/58/59 (Sprint 6) =====================
+
+    private static async Task<Guid> AbrirDemandaComPrioridadeAsync(HttpClient client, Guid tipoProcessoId, Guid clienteId, string prioridade)
+    {
+        var criar = await client.PostAsJsonAsync("/api/v1/demandas", new
+        {
+            tipoProcessoId,
+            clienteId,
+            responsavelId = (Guid?)null,
+            prioridade,
+            dataFimPrevista = (DateTimeOffset?)null,
+            camposPersonalizados = (object?)null,
+        });
+        return (await criar.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+    }
+
+    [Fact]
+    public async Task GetKanban_TipoProcessoValido_RetornaColunasNaOrdemDasEtapasECardNaColunaCerta()
+    {
+        var client = await CriarClienteAutenticadoComoAdminAsync();
+        var tipoProcessoId = await CriarTipoProcessoComFluxoLinearAsync(client);
+        var clienteId = await CriarClienteAsync(client);
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Alta");
+
+        var resposta = await client.GetAsync($"/api/v1/demandas/kanban?tipoProcessoId={tipoProcessoId}");
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resposta.Content.ReadFromJsonAsync<JsonElement>();
+        var colunas = body.GetProperty("colunas").EnumerateArray().ToList();
+        colunas.Should().HaveCount(2);
+        colunas[0].GetProperty("etapaNome").GetString().Should().Be("Primeira");
+        colunas[1].GetProperty("etapaNome").GetString().Should().Be("Segunda");
+        var cards = body.GetProperty("cards").EnumerateArray().ToList();
+        cards.Should().ContainSingle(c => c.GetProperty("etapaAtualId").GetGuid() == colunas[0].GetProperty("etapaId").GetGuid());
+    }
+
+    [Fact]
+    public async Task GetKanban_TipoProcessoSemFluxoPadrao_Retorna422()
+    {
+        var client = await CriarClienteAutenticadoComoAdminAsync();
+        var criarEquipe = await client.PostAsJsonAsync("/api/v1/equipes", new { nome = "Equipe sem fluxo", descricao = (string?)null });
+        var equipeId = (await criarEquipe.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        var criarTipo = await client.PostAsJsonAsync("/api/v1/tipos-processo", new
+        {
+            equipeId,
+            nome = "Sem fluxo",
+            descricao = (string?)null,
+            responsavelObrigatorio = false,
+            modoAtribuicao = "Manual",
+            responsavelFixoId = (Guid?)null,
+        });
+        var tipoProcessoId = (await criarTipo.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+        var resposta = await client.GetAsync($"/api/v1/demandas/kanban?tipoProcessoId={tipoProcessoId}");
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public async Task GetDemandas_OrdenacaoPorPrioridadeDescendente_RespeitaSeveridadeNaoOrdemAlfabetica()
+    {
+        // Alfabeticamente (o que a coluna string daria sem o mapeamento de rank): Urgente,
+        // Media, Baixa, Alta. Por severidade (o correto): Urgente, Alta, Media, Baixa.
+        var client = await CriarClienteAutenticadoComoAdminAsync();
+        var tipoProcessoId = await CriarTipoProcessoComFluxoLinearAsync(client);
+        var clienteId = await CriarClienteAsync(client);
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Baixa");
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Media");
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Urgente");
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Alta");
+
+        var resposta = await client.GetAsync("/api/v1/demandas?ordenarPor=Prioridade:desc");
+
+        var itens = (await resposta.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("itens").EnumerateArray().ToList();
+        itens.Select(i => i.GetProperty("prioridade").GetString()).Should().Equal("Urgente", "Alta", "Media", "Baixa");
+    }
+
+    [Fact]
+    public async Task GetDemandas_FiltroPorPrioridade_RetornaSoAsCorrespondentes()
+    {
+        var client = await CriarClienteAutenticadoComoAdminAsync();
+        var tipoProcessoId = await CriarTipoProcessoComFluxoLinearAsync(client);
+        var clienteId = await CriarClienteAsync(client);
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Baixa");
+        await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Urgente");
+
+        var resposta = await client.GetAsync("/api/v1/demandas?prioridade=Urgente");
+
+        var itens = (await resposta.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("itens").EnumerateArray().ToList();
+        itens.Should().ContainSingle();
+        itens[0].GetProperty("prioridade").GetString().Should().Be("Urgente");
+    }
+
+    [Fact]
+    public async Task GetDemandas_Paginacao_RespeitaTamanhoERetornaTotalCorreto()
+    {
+        var client = await CriarClienteAutenticadoComoAdminAsync();
+        var tipoProcessoId = await CriarTipoProcessoComFluxoLinearAsync(client);
+        var clienteId = await CriarClienteAsync(client);
+        for (var i = 0; i < 3; i++)
+            await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Media");
+
+        var resposta = await client.GetAsync("/api/v1/demandas?pagina=1&tamanhoPagina=2");
+
+        var body = await resposta.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("itens").GetArrayLength().Should().Be(2);
+        body.GetProperty("totalRegistros").GetInt32().Should().Be(3);
+        body.GetProperty("totalPaginas").GetInt32().Should().Be(2);
+    }
+
+    [Fact]
+    public async Task PatchBulk_AlteraPrioridadeDeVariasDemandas_Retorna200ComContagemDeSucesso()
+    {
+        var client = await CriarClienteAutenticadoComoAdminAsync();
+        var tipoProcessoId = await CriarTipoProcessoComFluxoLinearAsync(client);
+        var clienteId = await CriarClienteAsync(client);
+        var id1 = await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Baixa");
+        var id2 = await AbrirDemandaComPrioridadeAsync(client, tipoProcessoId, clienteId, "Baixa");
+
+        var resposta = await client.PatchAsJsonAsync("/api/v1/demandas/bulk", new
+        {
+            demandaIds = new[] { id1, id2 },
+            novoResponsavelId = (Guid?)null,
+            novaPrioridade = "Urgente",
+            cancelar = (bool?)null,
+        });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resposta.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("totalSucesso").GetInt32().Should().Be(2);
+        var detalhe1 = await client.GetAsync($"/api/v1/demandas/{id1}");
+        (await detalhe1.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("prioridade").GetString().Should().Be("Urgente");
+    }
+
+    [Fact]
+    public async Task PatchBulk_UsuarioAnalista_Retorna403()
+    {
+        using var scope = fixture.Services.CreateScope();
+        var tokenGenerator = scope.ServiceProvider.GetRequiredService<IJwtTokenGenerator>();
+        var usuarioAnalista = Usuario.Criar(Guid.NewGuid(), "Analista Bulk", "analista-bulk@exemplo.com", "hash", Perfil.Analista).Value;
+        var token = tokenGenerator.GerarAccessToken(usuarioAnalista);
+        var analistaClient = fixture.CreateClient();
+        analistaClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+
+        var resposta = await analistaClient.PatchAsJsonAsync("/api/v1/demandas/bulk", new
+        {
+            demandaIds = new[] { Guid.NewGuid() },
+            novoResponsavelId = (Guid?)null,
+            novaPrioridade = "Urgente",
+            cancelar = (bool?)null,
+        });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }

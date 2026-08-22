@@ -7,4 +7,5 @@ public interface ITipoProcessoRepository
     Task AddAsync(TipoProcesso tipoProcesso, CancellationToken ct = default);
     Task<TipoProcesso?> ObterPorIdAsync(Guid id, CancellationToken ct = default);
     Task<List<TipoProcesso>> ListarAsync(CancellationToken ct = default);
+    Task<List<TipoProcesso>> ListarPorIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
 }

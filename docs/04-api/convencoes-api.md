@@ -16,16 +16,19 @@ API REST, versionada por path (`/api/v1/...`), JSON como formato único de reque
 
 ## 3. Paginação, filtro e ordenação
 
-- Paginação obrigatória em toda listagem: `?page=1&pageSize=20` (padrão 20, máximo 100).
+- Paginação obrigatória em toda listagem: `?pagina=1&tamanhoPagina=50` (padrão 1/50).
 - Resposta paginada sempre no envelope:
 ```json
 {
-  "data": [ ... ],
-  "meta": { "page": 1, "pageSize": 20, "total": 143, "totalPages": 8 }
+  "itens": [ ... ],
+  "totalRegistros": 143,
+  "pagina": 1,
+  "tamanhoPagina": 50,
+  "totalPaginas": 3
 }
 ```
-- Filtros como query string nomeada: `?status=em_andamento&prioridade=alta&clienteId=...`.
-- Ordenação: `?sort=prioridade:desc,dataInicio:asc` (suporta múltiplos critérios, na ordem informada).
+- Filtros como query string nomeada, cada campo do recurso um parâmetro: `?status=EmAndamento&prioridade=Alta&clienteId=...` (ver `GET /api/v1/demandas` no Swagger para o filtro composto completo — status, responsável, prioridade, cliente, tipo de processo, etapa atual, intervalo de datas).
+- Ordenação: `?ordenarPor=Prioridade:desc&ordenarPor=DataInicio:asc` (parâmetro repetível — cada ocorrência é um critério, aplicados na ordem informada; ordenação cumulativa, não substitui a anterior).
 
 ## 4. Formato de erro
 
@@ -57,8 +60,8 @@ Todo erro segue [RFC 9457 (Problem Details)](https://www.rfc-editor.org/rfc/rfc9
 
 ## 7. Real-time (SignalR)
 
-- `/hubs/kanban` — grupo por `equipe_id`, eventos: `CardMovido`, `ResponsavelAlterado`.
-- `/hubs/notificacoes` — grupo por `usuario_id`, evento: `NovaNotificacao`.
-- Autenticação via JWT na negociação de conexão (`?access_token=...`), documentado explicitamente em [ADR-009](../02-arquitetura/decisoes/adr-009-notificacoes-tempo-real-signalr.md).
+- `/hubs/kanban` — grupo por equipe (`EntrarGrupoEquipe`/`SairGrupoEquipe`, invocados pelo cliente), evento `quadroAlterado` com o `tipoProcessoId` afetado. É um sinal de "invalide e recarregue", não um payload granular por card — o cliente reage refazendo o `GET /api/v1/demandas/kanban`.
+- Emitido só pelos pontos de entrada do orquestrador de execução (nunca de dentro de uma recursão interna de fork/join), pra nunca notificar antes da transação correspondente commitar.
+- Autenticação via JWT na negociação de conexão (`?access_token=...`), restrita a rotas `/hubs/*`. Documentado em [ADR-009](../02-arquitetura/decisoes/adr-009-notificacoes-tempo-real-signalr.md).
 
 Ver o catálogo de endpoints em [`endpoints-principais.md`](endpoints-principais.md).

@@ -26,7 +26,9 @@ public sealed class OrquestradorExecucao(
     IExecucaoEtapaRepository execucaoEtapaRepository,
     IDesdobramentoAguardadoRepository desdobramentoRepository,
     IDemandaRepository demandaRepository,
+    ITipoProcessoRepository tipoProcessoRepository,
     EtapaHandlerFactory etapaHandlerFactory,
+    IKanbanNotificador kanbanNotificador,
     IUnitOfWork unitOfWork)
 {
     public async Task IniciarAsync(Demanda demanda, CancellationToken ct = default)
@@ -37,6 +39,7 @@ public sealed class OrquestradorExecucao(
             return;
 
         await AvancarRamoAsync(demanda, primeira, ct);
+        await NotificarKanbanAsync(demanda, ct);
     }
 
     /// <summary>Chamado quando o responsável conclui manualmente uma etapa Comum, ou quando um subprocesso filho concluiu e o ramo pai (Aguardando) pode seguir.</summary>
@@ -47,6 +50,21 @@ public sealed class OrquestradorExecucao(
             return;
 
         await ProcessarConclusaoAsync(demanda, etapaConcluida, execucaoConcluida, null, ct);
+        await NotificarKanbanAsync(demanda, ct);
+    }
+
+    /// <summary>
+    /// Chamado só nos pontos de entrada públicos (não a cada AvancarRamoAsync interno),
+    /// depois que toda a cascata recursiva (fork, União, etc.) já foi persistida — nunca
+    /// avisa o frontend pra buscar dado que ainda não commitou. Silencioso se o
+    /// TipoProcesso não existir mais (não deveria acontecer, mas notificação não é
+    /// motivo pra falhar a operação principal).
+    /// </summary>
+    private async Task NotificarKanbanAsync(Demanda demanda, CancellationToken ct)
+    {
+        var tipoProcesso = await tipoProcessoRepository.ObterPorIdAsync(demanda.TipoProcessoId, ct);
+        if (tipoProcesso is not null)
+            await kanbanNotificador.NotificarQuadroAlteradoAsync(tipoProcesso.EquipeId, demanda.TipoProcessoId, ct);
     }
 
     private async Task AvancarRamoAsync(Demanda demanda, Etapa etapa, CancellationToken ct)

@@ -14,4 +14,10 @@ public sealed class TipoProcessoRepository(ProcessosDbContext db) : ITipoProcess
 
     public Task<List<TipoProcesso>> ListarAsync(CancellationToken ct = default) =>
         db.TiposProcesso.OrderBy(t => t.Nome).ToListAsync(ct);
+
+    public Task<List<TipoProcesso>> ListarPorIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var lista = ids.Distinct().ToList();
+        return lista.Count == 0 ? Task.FromResult(new List<TipoProcesso>()) : db.TiposProcesso.Where(t => lista.Contains(t.Id)).ToListAsync(ct);
+    }
 }

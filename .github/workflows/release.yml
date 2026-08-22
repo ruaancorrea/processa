@@ -73,14 +73,3 @@ jobs:
           tags: |
             ghcr.io/ruaancorrea/processa-api:${{ steps.semantic.outputs.new-release-version }}
             ghcr.io/ruaancorrea/processa-api:${{ steps.tags.outputs.mutable_tag }}
-
-      - name: Build & push imagem do frontend
-        if: steps.semantic.outputs.new-release-published == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/frontend.Dockerfile
-          push: true
-          tags: |
-            ghcr.io/ruaancorrea/processa-frontend:${{ steps.semantic.outputs.new-release-version }}
-            ghcr.io/ruaancorrea/processa-frontend:${{ steps.tags.outputs.mutable_tag }}

@@ -49,6 +49,9 @@ public static class ProcessosModuleServiceCollectionExtensions
         services.AddScoped<IVerificadorDesdobramentos, VerificadorDesdobramentos>();
 
         services.AddScoped<Application.Demandas.OrquestradorExecucao>();
+        // IHubContext<KanbanHub> só existe depois de builder.Services.AddSignalR() rodar em
+        // Program.cs (composition root) — este módulo só sabe da porta (IKanbanNotificador).
+        services.AddScoped<IKanbanNotificador, NotificadorKanban>();
         services.Configure<MinioOptions>(configuration.GetSection(MinioOptions.SectionName));
         // Singleton (não Scoped): AmazonS3Client é thread-safe e caro de construir —
         // mesma recomendação da AWS. Também é o que faz o cache de bucket confirmado
