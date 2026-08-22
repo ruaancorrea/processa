@@ -355,7 +355,12 @@ public class DemandaEndpointTests(ProcessaApiFixture fixture) : IAsyncLifetime
         var equipeId = (await criarEquipe.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
         var criarTipo = await client.PostAsJsonAsync("/api/v1/tipos-processo", new
         {
-            equipeId, nome = "Sem fluxo", descricao = (string?)null, responsavelObrigatorio = false, modoAtribuicao = "Manual", responsavelFixoId = (Guid?)null,
+            equipeId,
+            nome = "Sem fluxo",
+            descricao = (string?)null,
+            responsavelObrigatorio = false,
+            modoAtribuicao = "Manual",
+            responsavelFixoId = (Guid?)null,
         });
         var tipoProcessoId = (await criarTipo.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
 
@@ -427,7 +432,10 @@ public class DemandaEndpointTests(ProcessaApiFixture fixture) : IAsyncLifetime
 
         var resposta = await client.PatchAsJsonAsync("/api/v1/demandas/bulk", new
         {
-            demandaIds = new[] { id1, id2 }, novoResponsavelId = (Guid?)null, novaPrioridade = "Urgente", cancelar = (bool?)null,
+            demandaIds = new[] { id1, id2 },
+            novoResponsavelId = (Guid?)null,
+            novaPrioridade = "Urgente",
+            cancelar = (bool?)null,
         });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -449,7 +457,10 @@ public class DemandaEndpointTests(ProcessaApiFixture fixture) : IAsyncLifetime
 
         var resposta = await analistaClient.PatchAsJsonAsync("/api/v1/demandas/bulk", new
         {
-            demandaIds = new[] { Guid.NewGuid() }, novoResponsavelId = (Guid?)null, novaPrioridade = "Urgente", cancelar = (bool?)null,
+            demandaIds = new[] { Guid.NewGuid() },
+            novoResponsavelId = (Guid?)null,
+            novaPrioridade = "Urgente",
+            cancelar = (bool?)null,
         });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
