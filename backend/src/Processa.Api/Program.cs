@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Processa.Api;
 using Processa.Modules.Clientes.Infrastructure;
 using Processa.Modules.Clientes.Presentation;
@@ -109,18 +110,54 @@ builder.Services.AddAuthorizationBuilder()
 
 // CORS restrito a origens explicitamente autorizadas (nunca AllowAnyOrigin) — ver
 // docs/05-seguranca/politica-de-seguranca.md#2-proteção-de-dados. Origens configuradas
-// em appsettings.{Environment}.json / Cors:AllowedOrigins (dev: o painel React local).
+// em appsettings.{Environment}.json / Cors:AllowedOrigins (API-only: lista de clientes
+// HTTP autorizados a chamar a API a partir do browser).
 // AllowCredentials necessário para o cookie httpOnly do refresh token atravessar CORS.
-const string FrontendCorsPolicy = "FrontendCorsPolicy";
+const string ApiCorsPolicy = "ApiCorsPolicy";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
-    options.AddPolicy(FrontendCorsPolicy, policy =>
+    options.AddPolicy(ApiCorsPolicy, policy =>
         policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 // Documentação OpenAPI/Swagger interativa — ver docs/04-api/convencoes-api.md
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opts =>
-    opts.SwaggerDoc("v1", new() { Title = "Processa API", Version = "v1" }));
+{
+    opts.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Processa API",
+        Version = "v1",
+        Description = "API de gestão operacional para escritórios de contabilidade — motor de "
+            + "processos configurável (fork/join), multi-tenant, RBAC por perfil. Projeto API-only, "
+            + "sem cliente oficial. Repositório: https://github.com/ruaancorrea/processa",
+    });
+
+    // Botão "Authorize" no Swagger UI — cola o access token (obtido em POST /api/v1/auth/login)
+    // e todo request subsequente na UI já sai com o header preenchido.
+    opts.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Access token retornado por POST /api/v1/auth/login. Só o token — sem o prefixo \"Bearer \".",
+    });
+    opts.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
+            []
+        },
+    });
+
+    // Descrições de endpoint/DTO escritas como XML doc comment aparecem no Swagger UI.
+    foreach (var xmlFile in new[] { "Processa.Api.xml", "Processa.Modules.Processos.xml", "Processa.Modules.Identidade.xml", "Processa.Modules.Clientes.xml" })
+    {
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath)) opts.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
+});
 
 var app = builder.Build();
 
@@ -135,7 +172,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors(FrontendCorsPolicy);
+app.UseCors(ApiCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();

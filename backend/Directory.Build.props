@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- Aplicado a todo .csproj em backend/src e backend/tests (convenção MSBuild).
+       Gera o XML de doc comments pra alimentar o Swagger (ver Program.cs, IncludeXmlComments) —
+       CS1591 (símbolo público sem doc comment) é ruído esperado: documentamos onde adiciona
+       valor real pro consumidor da API, não every single property de every single DTO. -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

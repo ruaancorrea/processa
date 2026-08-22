@@ -43,6 +43,56 @@ Multi-tenant desde o desenho: cada escritório contábil é um tenant isolado, o
 
 Ver justificativa de cada escolha em [`docs/02-arquitetura/decisoes/`](docs/02-arquitetura/decisoes/).
 
+## Arquitetura
+
+Monólito modular: um processo, um deploy, várias fronteiras internas rígidas — cada módulo é um
+bounded context com suas 4 camadas, e nunca referencia outro módulo diretamente. Regra validada
+automaticamente por `Processa.ArchitectureTests` (NetArchTest) a cada build — uma violação quebra
+o CI, não depende de review manual pra ser pega.
+
+```mermaid
+graph TB
+    subgraph api["Processa.Api — composition root"]
+        Program["Program.cs<br/>DI, middlewares, mapeamento de rotas"]
+    end
+
+    subgraph identidade["Modules.Identidade"]
+        direction TB
+        idPres["Presentation"] --> idApp["Application"]
+        idInfra["Infrastructure"] --> idApp
+        idApp --> idDom["Domain"]
+    end
+
+    subgraph clientes["Modules.Clientes"]
+        direction TB
+        cliPres["Presentation"] --> cliApp["Application"]
+        cliInfra["Infrastructure"] --> cliApp
+        cliApp --> cliDom["Domain"]
+    end
+
+    subgraph processos["Modules.Processos — núcleo do domínio"]
+        direction TB
+        procPres["Presentation"] --> procApp["Application"]
+        procInfra["Infrastructure"] --> procApp
+        procApp --> procDom["Domain"]
+    end
+
+    kernel["Shared.Kernel<br/>Entity · ValueObject · Result · ports entre módulos"]
+
+    Program --> idPres
+    Program --> cliPres
+    Program --> procPres
+
+    idInfra -.->|implementa IConsultaUsuario| kernel
+    cliInfra -.->|implementa IConsultaCliente| kernel
+    procInfra -.->|consome via porta, nunca referência direta a Clientes/Identidade| kernel
+```
+
+- **Domain** não depende de nada — nem de Infrastructure, nem de outro módulo.
+- **Infrastructure** implementa as interfaces que Application define (repositórios, EF Core, SignalR, MinIO) — a dependência aponta pra dentro, nunca o Domain conhece o Postgres.
+- Módulo A nunca importa tipo de módulo B. Quando `Processos` precisa do nome de um cliente pra montar o kanban, ele depende de uma porta (`IConsultaCliente`, definida em `Shared.Kernel`) que `Clientes` implementa — inversão de dependência, não acoplamento direto.
+- O motor de execução de `Processos` (fork/join) é o núcleo do domínio: uma etapa concluída pode disparar N ramos em paralelo (fork) e uma etapa de União só libera quando todos os ramos convergem (join) — modelado como máquina de estados explícita, ver [ADR-003](docs/02-arquitetura/decisoes/adr-003-motor-de-processos-state-machine.md).
+
 ## Como rodar
 
 ```bash
