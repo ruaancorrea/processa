@@ -163,7 +163,7 @@ Ver [`decisoes/`](decisoes/) para o catálogo completo de ADRs numerados.
 | [004](decisoes/adr-004-mensageria-rabbitmq.md) | RabbitMQ + MassTransit para eventos e automações |
 | [005](decisoes/adr-005-autenticacao-multi-perfil.md) | JWT + RBAC multi-perfil, refresh token rotativo |
 | [006](decisoes/adr-006-observabilidade.md) | OpenTelemetry + Serilog como padrão de observabilidade |
-| [007](decisoes/adr-007-frontend-react.md) | React + TypeScript + Vite no frontend, sem SSR no MVP |
+| [007](decisoes/adr-007-frontend-react.md) | ~~React + TypeScript + Vite no frontend~~ — *superseded, projeto é API-only* |
 | [008](decisoes/adr-008-storage-documentos.md) | Object storage S3-compatible para documentos, não banco |
 | [009](decisoes/adr-009-notificacoes-tempo-real-signalr.md) | SignalR para tempo real (kanban, notificações internas) |
 | [010](decisoes/adr-010-ci-cd-gitflow.md) | GitFlow leve + Conventional Commits + CI obrigatório |

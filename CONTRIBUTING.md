@@ -8,13 +8,13 @@
 
 ## Qualidade
 
-- **TDD:** toda funcionalidade nasce com teste — Red → Green → Refactor. Backend: xUnit + FluentAssertions, cobertura mínima 80% (gate de CI). Frontend: Vitest + Testing Library.
+- **TDD:** toda funcionalidade nasce com teste — Red → Green → Refactor. xUnit + FluentAssertions, cobertura mínima 80% (gate de CI).
 - **Clean Architecture:** regras de dependência do [ADR-001](docs/02-arquitetura/decisoes/adr-001-clean-architecture-modular-monolith.md), validadas por testes de arquitetura automáticos — uma violação quebra o build.
 - **Documentação viva:** qualquer mudança estrutural relevante atualiza a documentação correspondente (`docs/`) no mesmo PR — ADR novo para toda decisão arquitetural significativa.
 
 ## Versionamento e releases
 
-SemVer calculado a partir dos commits convencionais (`BREAKING CHANGE`/`!` → major, `feat` → minor, demais → patch), via `semantic-release` (`.github/workflows/release.yml`). Merge em `develop` gera pre-release (`vX.Y.Z-dev.N`); merge em `main` gera release estável + imagens em `ghcr.io/ruaancorrea/`. Depende de branch protection com o check de CI obrigatório — configurado nas settings do repositório, não no código. Detalhes em [ADR-010](docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md).
+SemVer calculado a partir dos commits convencionais (`BREAKING CHANGE`/`!` → major, `feat` → minor, demais → patch), via `semantic-release` (`.github/workflows/release.yml`). Merge em `develop` gera pre-release (`vX.Y.Z-dev.N`); merge em `main` gera release estável + imagem em `ghcr.io/ruaancorrea/processa-api`. Depende de branch protection com o check de CI obrigatório — configurado nas settings do repositório, não no código. Detalhes em [ADR-010](docs/02-arquitetura/decisoes/adr-010-ci-cd-gitflow.md).
 
 ## Onde propor mudanças de arquitetura
 

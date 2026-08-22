@@ -90,7 +90,7 @@ Referência cruzada com os módulos descritos em [`requisitos-funcionais.md`](re
 - **Pré-condições:** Cliente possui uma solicitação de documento pendente vinculada a uma etapa em andamento.
 - **Fluxo principal:**
   1. Cliente acessa o portal, vê a pendência na tela inicial.
-  2. Faz upload do arquivo solicitado (validação de tipo/tamanho no frontend e no backend).
+  2. Faz upload do arquivo solicitado (validação de tipo/tamanho na API).
   3. Sistema armazena o documento (object storage), vincula à solicitação, marca como recebido.
   4. Se configurado, a etapa correspondente avança automaticamente (ex: de "Aguardando Documentos" para "Conferir Documentos").
   5. Sistema notifica o responsável interno sobre o recebimento.

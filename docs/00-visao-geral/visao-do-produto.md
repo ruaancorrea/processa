@@ -40,7 +40,7 @@ O Onvio Processos (Thomson Reuters) valida a categoria: gestão de projetos/proc
 
 - Cálculo fiscal, geração de guias, folha de pagamento — integração futura com sistemas contábeis existentes, não reimplementação.
 - Assinatura digital de documentos (avaliar integração com provedor especializado pós-MVP).
-- App mobile nativo (o frontend web é responsivo; app nativo é objetivo de fase de escala, não de MVP).
+- Cliente oficial (web ou mobile) — Processa é um projeto API-only; qualquer cliente é consumidor externo da API.
 
 ## 6. Métricas de sucesso do produto
 

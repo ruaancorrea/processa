@@ -11,29 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detectar pastas alteradas
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-              - '.github/workflows/ci.yml'
-            frontend:
-              - 'frontend/**'
-              - '.github/workflows/ci.yml'
-
   backend:
     name: Backend (.NET)
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -100,53 +79,3 @@ jobs:
           name: coverage-report
           path: backend/tests/Processa.UnitTests/coverage.cobertura.xml
           retention-days: 14
-
-  frontend:
-    name: Frontend (React)
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install
-        run: npm ci
-
-      - name: Scan de vulnerabilidades em dependências
-        run: npm audit --audit-level=high
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Testes (Vitest)
-        run: npm run test -- --run
-
-      - name: Build
-        run: npm run build
-
-  # Check único e estável para branch protection — backend/frontend são condicionais
-  # (path filter), então exigi-los diretamente travaria PR que só mexeu numa pasta
-  # (job "skipped" não satisfaz required check). Este job sempre roda e falha se
-  # qualquer job que de fato rodou falhou.
-  ci-success:
-    name: CI (obrigatório para merge)
-    if: always()
-    needs: [changes, backend, frontend]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verificar resultado dos jobs
-        run: |
-          if [ "${{ needs.backend.result }}" = "failure" ] || [ "${{ needs.frontend.result }}" = "failure" ]; then
-            echo "::error::Um ou mais jobs de CI falharam."
-            exit 1
-          fi
-          echo "CI passou (ou não havia mudança na pasta correspondente)."
