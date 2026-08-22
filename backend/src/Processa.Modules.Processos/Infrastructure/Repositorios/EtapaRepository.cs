@@ -15,5 +15,11 @@ public sealed class EtapaRepository(ProcessosDbContext db) : IEtapaRepository
     public Task<List<Etapa>> ListarPorFluxoAsync(Guid fluxoId, CancellationToken ct = default) =>
         db.Etapas.Where(e => e.FluxoId == fluxoId).OrderBy(e => e.Ordem).ToListAsync(ct);
 
+    public Task<List<Etapa>> ListarPorIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var lista = ids.Distinct().ToList();
+        return lista.Count == 0 ? Task.FromResult(new List<Etapa>()) : db.Etapas.Where(e => lista.Contains(e.Id)).ToListAsync(ct);
+    }
+
     public void Remover(Etapa etapa) => db.Etapas.Remove(etapa);
 }

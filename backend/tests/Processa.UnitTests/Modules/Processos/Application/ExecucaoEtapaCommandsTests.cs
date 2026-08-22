@@ -38,7 +38,8 @@ public class ExecucaoEtapaCommandsTests
     {
         var orquestrador = new OrquestradorExecucao(
             Substitute.For<IEtapaRepository>(), _execucaoEtapaRepository, Substitute.For<IDesdobramentoAguardadoRepository>(),
-            _demandaRepository, new EtapaHandlerFactory([]), _unitOfWork);
+            _demandaRepository, Substitute.For<ITipoProcessoRepository>(), new EtapaHandlerFactory([]),
+            Substitute.For<IKanbanNotificador>(), _unitOfWork);
         return new ConcluirExecucaoEtapaCommandHandler(_execucaoEtapaRepository, _demandaRepository, _historicoRepository, orquestrador, _usuarioContext, _unitOfWork);
     }
 

@@ -20,12 +20,14 @@ public class OrquestradorExecucaoTests
     private readonly FakeExecucaoEtapaRepository _execucaoEtapaRepository = new();
     private readonly FakeDesdobramentoAguardadoRepository _desdobramentoRepository = new();
     private readonly FakeDemandaRepository _demandaRepository = new();
+    private readonly ITipoProcessoRepository _tipoProcessoRepository = Substitute.For<ITipoProcessoRepository>();
+    private readonly IKanbanNotificador _kanbanNotificador = Substitute.For<IKanbanNotificador>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly Dictionary<TipoEtapa, IEtapaHandler> _handlers = new();
 
     private OrquestradorExecucao CriarOrquestrador() => new(
         _etapaRepository, _execucaoEtapaRepository, _desdobramentoRepository, _demandaRepository,
-        new EtapaHandlerFactory(_handlers.Values), _unitOfWork);
+        _tipoProcessoRepository, new EtapaHandlerFactory(_handlers.Values), _kanbanNotificador, _unitOfWork);
 
     private void RegistrarHandler(TipoEtapa tipo, ResultadoExecucaoEtapa resultado)
     {
@@ -206,6 +208,9 @@ public class OrquestradorExecucaoTests
         public Task<List<Etapa>> ListarPorFluxoAsync(Guid fluxoId, CancellationToken ct = default) =>
             Task.FromResult(Etapas.Where(e => e.FluxoId == fluxoId).ToList());
 
+        public Task<List<Etapa>> ListarPorIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default) =>
+            Task.FromResult(Etapas.Where(e => ids.Contains(e.Id)).ToList());
+
         public void Remover(Etapa etapa) => Etapas.Remove(etapa);
     }
 
@@ -227,6 +232,9 @@ public class OrquestradorExecucaoTests
 
         public Task<ExecucaoEtapa?> ObterPorDemandaEEtapaAsync(Guid demandaId, Guid etapaId, CancellationToken ct = default) =>
             Task.FromResult(_execucoes.FirstOrDefault(e => e.DemandaId == demandaId && e.EtapaId == etapaId));
+
+        public Task<List<ExecucaoEtapa>> ListarPorDemandaIdsAsync(IEnumerable<Guid> demandaIds, CancellationToken ct = default) =>
+            Task.FromResult(_execucoes.Where(e => demandaIds.Contains(e.DemandaId)).ToList());
     }
 
     private sealed class FakeDesdobramentoAguardadoRepository : IDesdobramentoAguardadoRepository
@@ -263,6 +271,16 @@ public class OrquestradorExecucaoTests
         public Task<int> ContarAtivasPorResponsavelAsync(Guid responsavelId, CancellationToken ct = default) =>
             Task.FromResult(_demandas.Count(d => d.ResponsavelId == responsavelId
                 && d.Status != StatusDemanda.Concluido && d.Status != StatusDemanda.Cancelado));
+
+        public Task<ResultadoPaginado<Demanda>> ListarComFiltroAsync(
+            FiltroDemandas filtro, IReadOnlyList<OrdenacaoDemanda> ordenacao, int pagina, int tamanhoPagina, CancellationToken ct = default) =>
+            Task.FromResult(new ResultadoPaginado<Demanda>(_demandas.ToList(), _demandas.Count, pagina, tamanhoPagina));
+
+        public Task<List<Demanda>> ListarParaKanbanAsync(Guid tipoProcessoId, CancellationToken ct = default) =>
+            Task.FromResult(_demandas.Where(d => d.TipoProcessoId == tipoProcessoId && d.EtapaAtualId != null).ToList());
+
+        public Task<List<Demanda>> ListarPorIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default) =>
+            Task.FromResult(_demandas.Where(d => ids.Contains(d.Id)).ToList());
     }
 
     /// <summary>Espelha Infrastructure.VerificadorDesdobramentos (mesma regra: nº de desdobramentos precisa bater com o configurado, não só "os que existem estão concluídos").</summary>

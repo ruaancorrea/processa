@@ -34,7 +34,8 @@ public class CriarDemandaCommandHandlerTests
         _etapaRepository.ListarPorFluxoAsync(Arg.Any<Guid>()).Returns([]);
         _orquestrador = new OrquestradorExecucao(
             _etapaRepository, _execucaoEtapaRepository, Substitute.For<IDesdobramentoAguardadoRepository>(),
-            _demandaRepository, new EtapaHandlerFactory([]), _unitOfWork);
+            _demandaRepository, Substitute.For<ITipoProcessoRepository>(), new EtapaHandlerFactory([]),
+            Substitute.For<IKanbanNotificador>(), _unitOfWork);
         _tenantContext.TenantId.Returns(Guid.NewGuid());
         _verificadorCliente.ExisteAtivoAsync(Arg.Any<Guid>()).Returns(true);
         _execucaoEtapaRepository.ListarPorDemandaAsync(Arg.Any<Guid>()).Returns([]);

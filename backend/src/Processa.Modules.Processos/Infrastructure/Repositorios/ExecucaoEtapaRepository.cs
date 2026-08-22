@@ -17,4 +17,10 @@ public sealed class ExecucaoEtapaRepository(ProcessosDbContext db) : IExecucaoEt
 
     public Task<ExecucaoEtapa?> ObterPorDemandaEEtapaAsync(Guid demandaId, Guid etapaId, CancellationToken ct = default) =>
         db.ExecucoesEtapa.FirstOrDefaultAsync(e => e.DemandaId == demandaId && e.EtapaId == etapaId, ct);
+
+    public Task<List<ExecucaoEtapa>> ListarPorDemandaIdsAsync(IEnumerable<Guid> demandaIds, CancellationToken ct = default)
+    {
+        var lista = demandaIds.Distinct().ToList();
+        return lista.Count == 0 ? Task.FromResult(new List<ExecucaoEtapa>()) : db.ExecucoesEtapa.Where(e => lista.Contains(e.DemandaId)).ToListAsync(ct);
+    }
 }

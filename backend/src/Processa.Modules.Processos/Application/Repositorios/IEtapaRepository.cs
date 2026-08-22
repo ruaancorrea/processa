@@ -7,5 +7,6 @@ public interface IEtapaRepository
     Task AddAsync(Etapa etapa, CancellationToken ct = default);
     Task<Etapa?> ObterPorIdAsync(Guid id, CancellationToken ct = default);
     Task<List<Etapa>> ListarPorFluxoAsync(Guid fluxoId, CancellationToken ct = default);
+    Task<List<Etapa>> ListarPorIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
     void Remover(Etapa etapa);
 }

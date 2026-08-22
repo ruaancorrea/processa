@@ -75,14 +75,20 @@ jobs:
       - name: Testes unitários (com gate de cobertura 80%, ver .csproj)
         run: dotnet test tests/Processa.UnitTests --configuration Release --no-build
 
-      # Postgres se auto-provisiona via Testcontainers dentro do próprio teste;
-      # MinIO (anexos de execução, Sprint 5) não usa Testcontainers, precisa subir à parte.
+      # Postgres se auto-provisiona via Testcontainers dentro do próprio teste; MinIO
+      # (anexos, Sprint 5) e Redis (backplane do SignalR/KanbanHub, Sprint 6) não usam
+      # Testcontainers, precisam subir à parte.
       - name: Subir MinIO
         run: |
           docker run -d --name minio -p 9000:9000 \
             -e MINIO_ROOT_USER=processa -e MINIO_ROOT_PASSWORD=devpassword123 \
             minio/minio server /data
           timeout 30 bash -c 'until curl -sf http://localhost:9000/minio/health/live; do sleep 1; done'
+
+      - name: Subir Redis
+        run: |
+          docker run -d --name redis -p 6379:6379 redis:7-alpine
+          timeout 30 bash -c 'until docker exec redis redis-cli ping | grep -q PONG; do sleep 1; done'
 
       - name: Testes de integração
         run: dotnet test tests/Processa.IntegrationTests --configuration Release --no-build

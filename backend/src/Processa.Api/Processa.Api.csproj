@@ -9,6 +9,12 @@
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.0" />
+    <!-- MessagePack trazido transitivamente por SignalR.StackExchangeRedis vinha na 2.5.187,
+         com várias CVEs moderadas/altas conhecidas (achado via scan de vulnerabilidades do
+         próprio dotnet). Pin explícito na última 2.5.x estável (mesma major, sem risco de
+         quebra de API) só pra forçar a versão corrigida, não é dependência direta de verdade. -->
+    <PackageReference Include="MessagePack" Version="2.5.302" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

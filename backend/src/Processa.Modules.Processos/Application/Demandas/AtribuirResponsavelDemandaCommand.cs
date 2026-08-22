@@ -14,8 +14,11 @@ public sealed class AtribuirResponsavelDemandaCommandValidator : AbstractValidat
 }
 
 public sealed class AtribuirResponsavelDemandaCommandHandler(
-    IDemandaRepository demandaRepository, IVerificadorUsuario verificadorUsuario, IUnitOfWork unitOfWork)
-    : IRequestHandler<AtribuirResponsavelDemandaCommand, Result>
+    IDemandaRepository demandaRepository,
+    ITipoProcessoRepository tipoProcessoRepository,
+    IVerificadorUsuario verificadorUsuario,
+    IKanbanNotificador kanbanNotificador,
+    IUnitOfWork unitOfWork) : IRequestHandler<AtribuirResponsavelDemandaCommand, Result>
 {
     public async Task<Result> Handle(AtribuirResponsavelDemandaCommand request, CancellationToken cancellationToken)
     {
@@ -31,6 +34,11 @@ public sealed class AtribuirResponsavelDemandaCommandHandler(
             return resultado;
 
         await unitOfWork.SalvarAsync(cancellationToken);
+
+        var tipoProcesso = await tipoProcessoRepository.ObterPorIdAsync(demanda.TipoProcessoId, cancellationToken);
+        if (tipoProcesso is not null)
+            await kanbanNotificador.NotificarQuadroAlteradoAsync(tipoProcesso.EquipeId, demanda.TipoProcessoId, cancellationToken);
+
         return Result.Success();
     }
 }

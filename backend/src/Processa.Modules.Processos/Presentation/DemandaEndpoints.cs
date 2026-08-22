@@ -8,8 +8,9 @@ using Processa.Modules.Processos.Domain;
 namespace Processa.Modules.Processos.Presentation;
 
 /// <summary>
-/// Minimal API de execução de demandas (Sprint 5). Nome de extensão distinto dos
-/// outros três já registrados pelo módulo Processos na composition root.
+/// Minimal API de execução de demandas (Sprint 5) e painel operacional/kanban (Sprint 6).
+/// Nome de extensão distinto dos outros três já registrados pelo módulo Processos na
+/// composition root.
 /// </summary>
 public static class DemandaEndpoints
 {
@@ -29,10 +30,50 @@ public static class DemandaEndpoints
             .WithName("CriarDemanda")
             .WithTags("Demandas");
 
-        app.MapGet("/api/v1/demandas", async (ISender sender, CancellationToken ct) =>
-                Results.Ok(await sender.Send(new ListarDemandasQuery(), ct)))
+        // PROJ-58: filtro/ordenação/paginação via query string. ordenarPor é repetível
+        // ("?ordenarPor=Prioridade:desc&ordenarPor=DataInicio:asc") — ordenação cumulativa,
+        // aplicada na ordem em que aparece. Analista só vê a própria fila mesmo se pedir
+        // responsavelId de outra pessoa — o handler ignora e força (ver ListarDemandasQuery).
+        app.MapGet("/api/v1/demandas", async (
+                StatusDemanda? status, Guid? responsavelId, bool? semResponsavel, Prioridade? prioridade, Guid? clienteId,
+                Guid? tipoProcessoId, Guid? etapaAtualId, DateTimeOffset? dataInicioDe, DateTimeOffset? dataInicioAte,
+                DateTimeOffset? dataFimPrevistaDe, DateTimeOffset? dataFimPrevistaAte, string[]? ordenarPor,
+                int? pagina, int? tamanhoPagina, ISender sender, CancellationToken ct) =>
+            {
+                var filtro = new FiltroDemandas(
+                    status, responsavelId, semResponsavel, prioridade, clienteId, tipoProcessoId, etapaAtualId,
+                    dataInicioDe, dataInicioAte, dataFimPrevistaDe, dataFimPrevistaAte);
+                var ordenacao = ParsearOrdenacao(ordenarPor);
+                var resultado = await sender.Send(new ListarDemandasQuery(filtro, ordenacao, pagina ?? 1, tamanhoPagina ?? 50), ct);
+                return Results.Ok(resultado);
+            })
             .RequireAuthorization("QualquerPerfil")
             .WithName("ListarDemandas")
+            .WithTags("Demandas");
+
+        // PROJ-57: board kanban — coluna = Etapa do fluxo padrão do TipoProcesso.
+        app.MapGet("/api/v1/demandas/kanban", async (Guid tipoProcessoId, ISender sender, CancellationToken ct) =>
+            {
+                var resultado = await sender.Send(new ObterKanbanQuery(tipoProcessoId), ct);
+                return resultado.IsSuccess
+                    ? Results.Ok(resultado.Value)
+                    : Results.Problem(title: "Não foi possível montar o quadro.", detail: resultado.Error, statusCode: 422);
+            })
+            .RequireAuthorization("QualquerPerfil")
+            .WithName("ObterKanban")
+            .WithTags("Demandas");
+
+        // PROJ-59: edição em massa — melhor-esforço (ver AtualizarDemandasEmMassaCommand).
+        app.MapPatch("/api/v1/demandas/bulk", async (AtualizarDemandasEmMassaRequest request, ISender sender, CancellationToken ct) =>
+            {
+                var resultado = await sender.Send(new AtualizarDemandasEmMassaCommand(
+                    request.DemandaIds, request.NovoResponsavelId, request.NovaPrioridade, request.Cancelar ?? false), ct);
+                return resultado.IsSuccess
+                    ? Results.Ok(resultado.Value)
+                    : Results.Problem(title: "Não foi possível atualizar as demandas selecionadas.", detail: resultado.Error, statusCode: 422);
+            })
+            .RequireAuthorization("GestorOuAdmin")
+            .WithName("AtualizarDemandasEmMassa")
             .WithTags("Demandas");
 
         app.MapGet("/api/v1/demandas/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
@@ -141,6 +182,25 @@ public static class DemandaEndpoints
 
         return app;
     }
+
+    private static List<OrdenacaoDemanda> ParsearOrdenacao(string[]? ordenarPor)
+    {
+        if (ordenarPor is null or { Length: 0 })
+            return [];
+
+        var resultado = new List<OrdenacaoDemanda>();
+        foreach (var entrada in ordenarPor)
+        {
+            var partes = entrada.Split(':', 2, StringSplitOptions.TrimEntries);
+            if (!Enum.TryParse<CampoOrdenacaoDemanda>(partes[0], ignoreCase: true, out var campo))
+                continue;
+
+            var descendente = partes.Length > 1 && partes[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+            resultado.Add(new OrdenacaoDemanda(campo, descendente));
+        }
+
+        return resultado;
+    }
 }
 
 public sealed record ValorCampoPersonalizadoDto(Guid CampoPersonalizadoId, string Valor);
@@ -154,3 +214,6 @@ public sealed record AtribuirResponsavelRequest(Guid ResponsavelId);
 public sealed record AtualizarPrioridadeRequest(Prioridade Prioridade);
 
 public sealed record AdicionarComentarioRequest(string? Texto);
+
+public sealed record AtualizarDemandasEmMassaRequest(
+    IReadOnlyList<Guid> DemandaIds, Guid? NovoResponsavelId, Prioridade? NovaPrioridade, bool? Cancelar);

@@ -44,6 +44,13 @@ builder.Services.AddIdentidadeModule(builder.Configuration);
 builder.Services.AddClientesModule(builder.Configuration);
 builder.Services.AddProcessosModule(builder.Configuration);
 
+// KanbanHub (PROJ-60, ADR-009): backplane Redis porque a API roda multi-instância atrás
+// de um load balancer em produção — sem backplane, dois clientes conectados a instâncias
+// diferentes nunca se veriam. Redis já provisionado desde o Sprint 0 (docker-compose),
+// nunca usado até agora.
+builder.Services.AddSignalR()
+    .AddStackExchangeRedis(builder.Configuration.GetConnectionString("Redis")!);
+
 // Middleware global de exceção (RFC 9457 Problem Details) — ver GlobalExceptionHandler.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -77,6 +84,19 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SecretKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
+        };
+        // SignalR (WebSocket/SSE) não consegue setar o header Authorization na negociação
+        // de conexão — só aceita token via query string, e só pros paths de Hub (ADR-009),
+        // nunca pra rotas REST normais (não afrouxa a validação de token pro resto da API).
+        bearerOpts.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            },
         };
     });
 
@@ -128,6 +148,8 @@ app.MapDemandasProcessosModule();
 app.MapIdentidadeModule();
 app.MapEquipesModule();
 app.MapClientesModule();
+
+app.MapHub<KanbanHub>("/hubs/kanban").RequireAuthorization("QualquerPerfil");
 
 app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }))
     .WithTags("Health");
